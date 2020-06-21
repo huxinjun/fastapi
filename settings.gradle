@@ -1,0 +1,2 @@
+include ':app', ':fastapi'
+rootProject.name='main'
