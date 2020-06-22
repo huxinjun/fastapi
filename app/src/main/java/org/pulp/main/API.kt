@@ -1,8 +1,8 @@
 package cn.aichang.blackbeauty.base.net.api
 
 import io.reactivex.Observable
-import org.pulp.fastapi.anno.CONFIG
-import org.pulp.fastapi.extension.ConfigObservable
+import org.pulp.fastapi.anno.MULTI_PATH
+import org.pulp.fastapi.extension.SequenceObservable
 import retrofit2.http.*
 
 /**
@@ -26,12 +26,12 @@ import retrofit2.http.*
 interface CommonAPI {
 
     @GET("USE_CONFIG_ANNO_URL")
-    @CONFIG("https://alapi.mengliaoba.cn/apiv5/getconfig.php",
+    @MULTI_PATH("https://alapi.mengliaoba.cn/apiv5/getconfig.php",
             "http://123.56.221.219:8280/apiv5/getconfig.php",
             "http://api.5aikan.cn/apiv5/getconfig.php",
             "http://api.mengface.cn/apiv5/getconfig.php",
             "http://api.mengliaoba.cn/apiv5/getconfig.php")
-    fun getConfig(): ConfigObservable<UrlKey>
+    fun getConfig(): SequenceObservable<UrlKey>
 
     @GET(UrlKey.COMMON_FLASHSCREEN)
     fun getStartPic(@Query("tag") tag: String): SimpleObservable<StringModel>

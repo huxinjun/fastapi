@@ -10,10 +10,10 @@ import com.google.gson.GsonBuilder;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.pulp.fastapi.page.IModel;
-import org.pulp.fastapi.page._String;
+import org.pulp.fastapi.model.IModel;
+import org.pulp.fastapi.model._String;
 import org.pulp.fastapi.util.ULog;
-import org.pulp.fastapi.extension.Error;
+import org.pulp.fastapi.model.Error;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -56,7 +56,6 @@ public class AichangConverterFactory extends Converter.Factory {
     private GsonBuilder gsonBuilder = new GsonBuilder();
     private GsonConverterFactory gsonConverterFactory = GsonConverterFactory.create(gsonBuilder.create());
 
-    private UrlKeyConverter urlkeyConverter = new UrlKeyConverter();//urlkey单独解析
     private StringModelConverter stringModelConverter = new StringModelConverter();//由于SimpleObservable限制了实体类型,使用此对象支持String
 
     public static AichangConverterFactory create() {
@@ -67,9 +66,7 @@ public class AichangConverterFactory extends Converter.Factory {
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
         ULog.out("responseBodyConverter:type=" + type);
-        if (type == UrlKey.class) {
-            return urlkeyConverter;
-        } else if (type == _String.class) {
+        if (type == _String.class) {
             return stringModelConverter;
         } else {
             return new JsonConverter<>(type);
@@ -105,18 +102,6 @@ public class AichangConverterFactory extends Converter.Factory {
         @Override
         public _String convert(@NonNull ResponseBody value) throws IOException {
             return new _String(getResponseContent(value).json);
-        }
-    }
-
-    /**
-     * UrlKey自定义转换,需要转换为特定格式
-     * Created by xinjun on 2019/11/30 14:49
-     */
-    private class UrlKeyConverter implements Converter<ResponseBody, UrlKey> {
-
-        @Override
-        public UrlKey convert(@NonNull ResponseBody value) throws IOException {
-            return parseUrlKey(getResponseContent(value).json);
         }
     }
 
@@ -166,11 +151,11 @@ public class AichangConverterFactory extends Converter.Factory {
             }
             ULog.out("parse:data=" + data);
             if (data == null)
-                throw new RuntimeException("parse bean error,please check your bean");
+                throw new RuntimeException("数据解析错误");
 
             boolean cacheResponse = responseInfo.isCache;
             ULog.out("parse:is cache response=" + cacheResponse);
-            data.onSetIsCache(cacheResponse);
+            data.setCache(cacheResponse);
 
             return data;
         }

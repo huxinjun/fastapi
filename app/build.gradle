@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.pulp:fastapi:1.0.0'
     compile "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    compile project(path: ':fastapi')
 }
 repositories {
     mavenCentral()

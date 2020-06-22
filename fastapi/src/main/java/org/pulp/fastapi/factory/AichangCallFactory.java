@@ -1,6 +1,8 @@
 package org.pulp.fastapi.factory;
 
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +24,7 @@ public class AichangCallFactory implements Call.Factory {
 
     private static AichangCallFactory mInstance;
 
-    OkHttpClient okHttpClient;
+    private OkHttpClient okHttpClient;
 
     public static AichangCallFactory getInstance(OkHttpClient okHttpClient) {
         if (mInstance == null)
@@ -49,16 +51,13 @@ public class AichangCallFactory implements Call.Factory {
     }
 
 
+    @SuppressLint("UseSparseArrays")
     private Map<Long, RequestWatcher> requestWatcherMap = new HashMap<>();
 
     public void setRequestWatcher(long threadId, RequestWatcher requestWatcher) {
         requestWatcherMap.put(threadId, requestWatcher);
         ULog.out("RequestWatcher.setWatcher=" + threadId);
     }
-
-//    public interface RequestWatcher {
-//        void onRequestCreated(Request request);
-//    }
 
     public interface RequestWatcher {
         Request onRequestCreated(Request request);

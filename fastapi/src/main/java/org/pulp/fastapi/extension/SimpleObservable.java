@@ -5,11 +5,13 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 
-import org.pulp.fastapi.ApiClient;
 import org.pulp.fastapi.CachePolicy;
+import org.pulp.fastapi.Get;
 import org.pulp.fastapi.factory.AichangCallFactory;
 import org.pulp.fastapi.life.DestoryWatcher;
-import org.pulp.fastapi.page.IModel;
+import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.model.IModel;
+import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 
 import java.lang.annotation.Annotation;
@@ -96,7 +98,6 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private Success<T> success;
     private Faild faild;
     private boolean newRequest = true;//用于链式调用只subscrib一次,并且同一个SimpleObservable多次复用
-    private boolean cancelNextRequst = false;//取消下次的网络请求,用于分页页数超出范围
     private Map<String, String> extraParam;
     private boolean mIsToastError;
     private InternalObserver mInternalObserver;
@@ -106,7 +107,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private T currData;
     private ModifyUrlCallback mModifyUrlCallback;
 
-    private String urlkey;//与之关联的UrlKey,如UrlKey中的HOT_TODAY_SELECTED相对应的值:hot_today_selected
+    private String path;//与之关联的path
     private AtomicReference<Disposable> atomicReference = new AtomicReference<>();
     private SimpleObserver<T> simpleObserver = new SimpleObserver<>();
 
@@ -141,7 +142,6 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             ULog.out("onNext.data=" + t);
             setCurrData(t);
             if (t != null) {
-                t.onSetUrlPath(urlkey);
                 if (SimpleObservable.this.success != null)
                     success.onSuccess(t);
             }
@@ -159,7 +159,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 error = Error.Companion.str2err(message);
             } else {
                 error = new Error();
-                if (!NetworkUtils.isConnected(KShareApplication.getInstance())) {
+                if (!CommonUtil.isConnected(Get.getContext())) {
                     error.setCode(Error.ERR_NO_NET);
                     error.setStatus("no network");
                     error.setMsg("没网了");
@@ -173,8 +173,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             ULog.out("onError.error=" + error);
             if (SimpleObservable.this.faild != null)
                 faild.onFaild(error);
+            assert error != null;
             if (mIsToastError)
-                Toast.showShortToast(TextUtils.isEmpty(error.getDesc()) ? error.getMsg() : error.getDesc());
+                Toast.makeText(Get.getContext()
+                        , TextUtils.isEmpty(error.getDesc()) ? error.getMsg() : error.getDesc(), Toast.LENGTH_LONG).show();
             if (observer != null)
                 observer.onError(e);
             e.printStackTrace();
@@ -220,8 +222,11 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             else
                 ULog.out("cachePolicy.use anno cache control:" + cacheHeader);
         else {
-            builder.header("Cache-Control", getCacheControl());
-            ULog.out("cachePolicy.use dynamic cache control:" + getCacheControl());
+            String[] split = getCacheControl().split(":");
+            if (split.length > 1) {
+                builder.header("Cache-Control", split[1]);
+                ULog.out("cachePolicy.use dynamic cache control:" + split[1]);
+            }
         }
         ULog.out("cachePolicy.after headers:" + request.headers());
     }
@@ -235,20 +240,21 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private void cacheUseAllSupport(Request.Builder builder, Observer<? super T> observer) {
         try {
             Request request = builder.build();
+            Request.Builder newBuilder = request.newBuilder();
             ULog.out("cacheUseAllSupport.request:" + request);
 
             String header = request.header("Cache-Control");
             ULog.out("cacheUseAllSupport.header=" + header);
             if (request.header("Accept-Encoding") == null && request.header("Range") == null)
-                builder.header("Accept-Encoding", "gzip");
+                newBuilder.header("Accept-Encoding", "gzip");
 
 
             boolean forceCache = !TextUtils.isEmpty(header) && header.toLowerCase().contains("all");
-            if (ApiClient.getCache() != null && forceCache) {
-                Field internalCacheField = ApiClient.getCache().getClass().getDeclaredField("internalCache");
+            if (Get.getCache() != null && forceCache) {
+                Field internalCacheField = Get.getCache().getClass().getDeclaredField("internalCache");
                 internalCacheField.setAccessible(true);
-                InternalCache internalCache = (InternalCache) internalCacheField.get(ApiClient.getCache());
-                Response response = internalCache.get(request);
+                InternalCache internalCache = (InternalCache) internalCacheField.get(Get.getCache());
+                Response response = internalCache.get(newBuilder.build());
                 ULog.out("cacheUseAllSupport.cache response=" + response);
 
                 if (response == null)
@@ -259,10 +265,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 }
 
                 Response finalResponse = response;
-                okhttp3.Response.Builder responseBuilder = response.newBuilder().request(request);
+                okhttp3.Response.Builder responseBuilder = response.newBuilder().request(newBuilder.build());
                 if ("gzip".equalsIgnoreCase(response.header("Content-Encoding")) && HttpHeaders.hasBody(response)) {
                     GzipSource responseBody = new GzipSource(response.body().source());
-                    responseBuilder.body(new RealResponseBody(response.header("Content-Type"), response.body().contentLength(), Okio.buffer(responseBody)));
+                    responseBuilder.body(new RealResponseBody(response.headers(), Okio.buffer(responseBody)));
                     finalResponse = responseBuilder.build();
                     if (finalResponse.body() == null) {
                         ULog.out("cacheUseAllSupport.finalResponse.body is null!!!");
@@ -270,7 +276,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                     }
                 }
 
-                Retrofit retrofit = ApiClient.getRetrofit();
+                Retrofit retrofit = Get.getRetrofit();
                 Converter<ResponseBody, Object> bodyConverter = retrofit.responseBodyConverter(observableType, annotations);
                 if (bodyConverter == null) {
                     ULog.out("cacheUseAllSupport.bodyConverter is null!!!");
@@ -279,7 +285,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
                 T cacheData = (T) bodyConverter.convert(finalResponse.body());
-                cacheData.onSetIsCache(true);
+                cacheData.setCache(true);
                 ULog.out("cacheUseAllSupport.cache data=" + cacheData);
                 String beforeCacheControl = getCacheControl();
                 ULog.out("cacheUseAllSupport.beforeCacheControl=" + beforeCacheControl);
@@ -311,22 +317,18 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
     void subscribeIfNeed() {
-        ULog.out("subscribeIfNeed.isDisposed=" + isDisposed() + ",newRequest=" + newRequest + ",cancelNextRequst=" + cancelNextRequst);
+        ULog.out("subscribeIfNeed.isDisposed=" + isDisposed() + ",newRequest=" + newRequest);
         if (isDisposed())
             return;
         if (!newRequest)
             return;
-        if (cancelNextRequst) {
-            cancelNextRequst = false;
-            return;
-        }
         mHandler.post(() -> subscribe(simpleObserver));
         newRequest = false;
     }
 
     //终止一次代码块后续的请求
     //用于分页没有数据时,不让success等方法发出订阅请求
-    protected void abortOnce() {
+    void abortOnce() {
         newRequest = false;
         mHandler.post(() -> newRequest = true);
     }
@@ -449,7 +451,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
     @Override
     public void dispose() {
-        ULog.out("dispose,urlkey=" + urlkey);
+        ULog.out("dispose,path=" + path);
         //切断数据链
         DisposableHelper.dispose(atomicReference);
         //切断引用
@@ -467,16 +469,12 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         this.mModifyUrlCallback = mModifyUrlCallback;
     }
 
-    void cancelNextRequest() {
-        cancelNextRequst = true;
+    public String getPath() {
+        return path;
     }
 
-    public String getUrlkey() {
-        return urlkey;
-    }
-
-    void setUrlkey(String urlkey) {
-        this.urlkey = urlkey;
+    void setPath(String path) {
+        this.path = path;
     }
 
     void setExtraParam(Map<String, String> extraParam) {

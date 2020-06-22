@@ -1,20 +1,21 @@
-package org.pulp.fastapi.page;
+package org.pulp.main;
 
 
-import androidx.annotation.Nullable;
-
-import org.pulp.fastapi.extension.SimpleListObservable;
+import org.pulp.fastapi.i.PageCondition;
+import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.util.ULog;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import androidx.annotation.Nullable;
 
 
 /**
  * 默认分页
  * Created by xinjun on 2019/12/9 11:20
  */
-public class DeffaultPageCondition<T extends IListModel> implements SimpleListObservable.PageCondition<T> {
+public class DeffaultPageCondition<T extends IModel> implements PageCondition<T> {
 
     public static final String NO_MORE_DATA = "NO_MORE_DATA";
 

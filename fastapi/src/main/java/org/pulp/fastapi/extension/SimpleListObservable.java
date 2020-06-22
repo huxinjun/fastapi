@@ -1,15 +1,12 @@
 package org.pulp.fastapi.extension;
 
 
-import androidx.annotation.Nullable;
-
-import org.pulp.fastapi.page.DeffaultPageCondition;
-import org.pulp.fastapi.page.IListModel;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.i.PageCondition;
+import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.model.IModel;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.Map;
 
 import io.reactivex.Observable;
 import okhttp3.CacheControl;
@@ -18,41 +15,14 @@ import okhttp3.CacheControl;
  * 为SimpleObservable提供分页功能
  * Created by xinjun on 2019/12/4 16:38
  */
-public class SimpleListObservable<T extends IListModel> extends SimpleObservable<T> {
-
-    /**
-     * 自定义分页回调
-     * Created by xinjun on 2019/12/9 11:13
-     */
-    public interface PageCondition<T> {
-        /**
-         * 下一页数据
-         *
-         * @param data 当前数据
-         * @return 要添加在请求中的参数
-         */
-        Map<String, String> nextPage(@Nullable T data);
-
-        /**
-         * 上一页数据
-         *
-         * @param data 当前数据
-         * @return 要添加在请求中的参数
-         */
-        Map<String, String> prePage(@Nullable T data);
-
-        /**
-         * 指定某一页数据
-         */
-        Map<String, String> page(@Nullable T data, int page);
-    }
+public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> {
 
     SimpleListObservable(Observable<T> upstream, Type observableType, Annotation[] annotations) {
         super(upstream, observableType, annotations);
     }
 
 
-    PageCondition<T> mPageCondition;
+    private PageCondition<T> mPageCondition;
 
     @Override
     public SimpleListObservable<T> refresh() {
@@ -66,12 +36,10 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
      * 前一页
      */
     public SimpleObservable<T> prePage() {
-        if (mPageCondition != null)
-            setExtraParam(mPageCondition.prePage(getCurrData()));
-        else {
-            mPageCondition = new DeffaultPageCondition<>();
-            setExtraParam(mPageCondition.prePage(getCurrData()));
+        if (mPageCondition == null) {
+            throw new RuntimeException("not found page condition declare");
         }
+        setExtraParam(mPageCondition.prePage(getCurrData()));
         subscribeIfNeed();
         return this;
     }
@@ -81,7 +49,10 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
      */
     @SuppressWarnings("UnusedReturnValue")
     public SimpleObservable<T> nextPage() {
-        if (!hasMore()) {
+        if (mPageCondition == null) {
+            throw new RuntimeException("not found page condition declare");
+        }
+        if (!mPageCondition.hasMore(getCurrData())) {
             abortOnce();
             getHandler().post(() -> {
                 Error error = new Error();
@@ -94,12 +65,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
             });
             return this;
         }
-        if (mPageCondition != null)
-            setExtraParam(mPageCondition.nextPage(getCurrData()));
-        else {
-            mPageCondition = new DeffaultPageCondition<>();
-            setExtraParam(mPageCondition.nextPage(getCurrData()));
-        }
+        setExtraParam(mPageCondition.nextPage(getCurrData()));
         subscribeIfNeed();
         return this;
     }
@@ -118,12 +84,10 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
      */
     @SuppressWarnings({"UnusedReturnValue", "WeakerAccess"})
     public SimpleObservable<T> setPage(int page) {
-        if (mPageCondition != null)
-            setExtraParam(mPageCondition.page(getCurrData(), page));
-        else {
-            mPageCondition = new DeffaultPageCondition<>();
-            setExtraParam(mPageCondition.page(getCurrData(), page));
+        if (mPageCondition == null) {
+            throw new RuntimeException("not found page condition declare");
         }
+        setExtraParam(mPageCondition.page(getCurrData(), page));
         return this;
     }
 
@@ -175,16 +139,6 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
     @Override
     public SimpleListObservable<T> toastError() {
         return (SimpleListObservable<T>) super.toastError();
-    }
-
-    /**
-     * 当前数据是否可以请求更多
-     */
-    private boolean hasMore() {
-        boolean hasMore = getCurrData() == null || getCurrData().hasMore();
-        ULog.out("hasMore=" + hasMore + ",class="
-                + (getCurrData() == null ? "" : getCurrData().getClass()));
-        return hasMore;
     }
 
     /**

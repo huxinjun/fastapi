@@ -12,7 +12,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface CONFIG {
+public @interface MULTI_PATH {
     String[] value();
 }
 

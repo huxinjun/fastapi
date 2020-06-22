@@ -1,4 +1,4 @@
-package org.pulp.fastapi.page;
+package org.pulp.fastapi.model;
 
 public class _String implements IModel{
     String content;

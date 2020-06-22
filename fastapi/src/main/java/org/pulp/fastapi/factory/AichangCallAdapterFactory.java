@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 
 import org.pulp.fastapi.extension.AichangCallAdapter;
 import org.pulp.fastapi.extension.StaticUrl;
-import org.pulp.fastapi.extension.ConfigObservable;
+import org.pulp.fastapi.extension.SequenceObservable;
 import org.pulp.fastapi.extension.SimpleListObservable;
 import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.util.ULog;
@@ -51,7 +51,7 @@ public class AichangCallAdapterFactory extends CallAdapter.Factory {
 
         if (rawType == SimpleObservable.class
                 || rawType == SimpleListObservable.class
-                || rawType == ConfigObservable.class
+                || rawType == SequenceObservable.class
                 || rawType == StaticUrl.class) {
             RxJava2CallAdapterFactory rxCallAdapterFactory = findRxCallAdapterFactory(retrofit);
             if (rxCallAdapterFactory == null)
@@ -62,10 +62,11 @@ public class AichangCallAdapterFactory extends CallAdapter.Factory {
                 }
             };
             Type genericSuperclass = observable.getClass().getGenericSuperclass();
+            if (genericSuperclass == null)
+                return null;
             Type observableType;
             try {
                 observableType = getParameterUpperBound(0, (ParameterizedType) returnType);
-
             } catch (ClassCastException ex) {
                 //非泛型返回值
                 observableType = returnType;

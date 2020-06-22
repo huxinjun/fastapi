@@ -1,6 +1,6 @@
 package org.pulp.fastapi.anno;
 
-import org.pulp.fastapi.extension.SimpleListObservable;
+import org.pulp.fastapi.i.PageCondition;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -16,6 +16,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(METHOD)
 @Retention(RUNTIME)
 public @interface PAGE {
-    Class<? extends SimpleListObservable.PageCondition> value();
+    Class<? extends PageCondition> value();
 }
 

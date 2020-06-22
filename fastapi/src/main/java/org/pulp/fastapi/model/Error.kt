@@ -1,4 +1,4 @@
-package org.pulp.fastapi.extension
+package org.pulp.fastapi.model
 
 
 /**
