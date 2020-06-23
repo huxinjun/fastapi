@@ -15,9 +15,7 @@ import androidx.annotation.Nullable;
  * 默认分页
  * Created by xinjun on 2019/12/9 11:20
  */
-public class DeffaultPageCondition<T extends IModel> implements PageCondition<T> {
-
-    public static final String NO_MORE_DATA = "NO_MORE_DATA";
+public class CommonPageCondition<T extends ListModel> implements PageCondition<T> {
 
     private static final int PAGE_COUNT = 20;
 
@@ -57,31 +55,16 @@ public class DeffaultPageCondition<T extends IModel> implements PageCondition<T>
         ULog.out("page_next=" + page_next);
         ULog.out("page_count=" + page_count);
 
-        if (go > 0) {
-            if (go == page_next) {
-                if (page == page_count) {
-                    return new HashMap<String, String>() {
-                        {
-                            put(NO_MORE_DATA, NO_MORE_DATA);
-                        }
-                    };
-                }
-            }
-
-            if (page > page_count) {
-                return new HashMap<String, String>() {
-                    {
-                        put(NO_MORE_DATA, NO_MORE_DATA);
-                    }
-                };
-            }
-        }
-
         return new HashMap<String, String>() {
             {
                 put("page", String.valueOf(go));
                 put("count", String.valueOf(PAGE_COUNT));
             }
         };
+    }
+
+    @Override
+    public boolean hasMore(@Nullable T data) {
+        return true;
     }
 }

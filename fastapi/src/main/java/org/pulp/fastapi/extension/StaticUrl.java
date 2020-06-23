@@ -1,12 +1,13 @@
 package org.pulp.fastapi.extension;
 
 
+import org.pulp.fastapi.util.UrlUtil;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.aichang.blackbeauty.base.net.util.UrlUtil;
 import retrofit2.http.Query;
 
 /**

@@ -1,12 +1,13 @@
 package org.pulp.main;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
+import android.view.View;
 
-import org.pulp.fastapi.TEST;
+import org.pulp.fastapi.ApiClient;
+import org.pulp.fastapi.util.ULog;
 
-import cn.aichang.blackbeauty.base.net.api.CommonAPI;
+import androidx.appcompat.app.AppCompatActivity;
+import cn.aichang.blackbeauty.base.net.api.TestAPI;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -14,17 +15,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        TEST t=new TEST();
-        t.getT();
-        int _=0;
+
     }
 
 
-    public static void initUrlConfig() {
-        getApi(CommonAPI.class)
+    public void initUrlConfig() {
+        ApiClient.getApi(TestAPI.class)
                 .getConfig()
-                .success(data -> ApiClient.GlobalUrlkey = data)
-                .unreachable((observable, error) -> observable.nextUrl());
-//                .toastError();
+                .success(data -> ULog.out("success:" + data))
+                .unreachable((error, url) -> ULog.out("unreachable:" + url))
+                .faild(error -> ULog.out("faild:" + error))
+                .toastError();
+    }
+
+
+    public void test(View view) {
+        initUrlConfig();
     }
 }

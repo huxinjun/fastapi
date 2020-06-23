@@ -161,22 +161,20 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 error = new Error();
                 if (!CommonUtil.isConnected(Get.getContext())) {
                     error.setCode(Error.ERR_NO_NET);
-                    error.setStatus("no network");
-                    error.setMsg("没网了");
+                    error.setMsg("no network");
                 } else {
-                    error.setCode(Error.ERR_APP);
-                    error.setStatus("application error,open logcat to preview Warning log or stack detail");
-                    error.setMsg(message);
+                    error.setCode(Error.ERR_CRASH);
+                    error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);
                 }
             }
             ULog.out("onError.message=" + message);
             ULog.out("onError.error=" + error);
+
             if (SimpleObservable.this.faild != null)
                 faild.onFaild(error);
             assert error != null;
-            if (mIsToastError)
-                Toast.makeText(Get.getContext()
-                        , TextUtils.isEmpty(error.getDesc()) ? error.getMsg() : error.getDesc(), Toast.LENGTH_LONG).show();
+            if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
+                Toast.makeText(Get.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
             if (observer != null)
                 observer.onError(e);
             e.printStackTrace();

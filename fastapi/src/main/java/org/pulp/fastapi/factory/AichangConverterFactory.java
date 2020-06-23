@@ -8,10 +8,14 @@ import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.pulp.fastapi.Get;
+import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.model._String;
+import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 import org.pulp.fastapi.model.Error;
 
@@ -32,7 +36,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class AichangConverterFactory extends Converter.Factory {
 
     private static final String TAG = AichangConverterFactory.class.getSimpleName();
-    public static final String TAG_CACHE = "@#!!!CACHE_TAG_NO_REPEAT!!!#@";
+    public static final String TAG_EXTRA = "@#!!!EXTRA_TAG_NO_REPEAT!!!#@";
 
 
     /**
@@ -42,6 +46,7 @@ public class AichangConverterFactory extends Converter.Factory {
     private class ResponseInfo {
         boolean isCache;
         String json;
+        String dataParserClass;
 
         ResponseInfo() {
         }
@@ -49,6 +54,16 @@ public class AichangConverterFactory extends Converter.Factory {
         ResponseInfo(boolean isCache, String json) {
             this.isCache = isCache;
             this.json = json;
+        }
+
+        @NotNull
+        @Override
+        public String toString() {
+            return "ResponseInfo{" +
+                    "isCache=" + isCache +
+                    ", json='" + json + '\'' +
+                    ", dataParserClass='" + dataParserClass + '\'' +
+                    '}';
         }
     }
 
@@ -89,8 +104,28 @@ public class AichangConverterFactory extends Converter.Factory {
         if (TextUtils.isEmpty(string))
             return new ResponseInfo(false, string);
         ResponseInfo info = new ResponseInfo();
-        info.isCache = string.startsWith(AichangConverterFactory.TAG_CACHE);
-        info.json = string.replace(AichangConverterFactory.TAG_CACHE, "");
+        String[] split = string.split(TAG_EXTRA);
+        if (split.length == 1)
+            return new ResponseInfo(false, string);
+        for (int i = 0; i < split.length - 1; i++) {
+            String extra = split[i];
+            String[] param = extra.split("=");
+            if (param.length == 2) {
+                String k = param[0].trim();
+                String v = param[1].trim();
+                switch (k) {
+                    case "Cache":
+                        info.isCache = Boolean.parseBoolean(v);
+                        break;
+                    case "DataParser":
+                        info.dataParserClass = v;
+                        break;
+                }
+            }
+        }
+        info.json = split[split.length - 1];
+
+        ULog.out("getResponseContent:" + info);
         return info;
     }
 
@@ -122,26 +157,42 @@ public class AichangConverterFactory extends Converter.Factory {
             ResponseInfo responseInfo = getResponseContent(value);
             String jsonStr = responseInfo.json;
 
+            if (TextUtils.isEmpty(jsonStr))
+                return null;
+
+            Parser mParser = Get.getParser();
+            String dataParserClass = responseInfo.dataParserClass;
             try {
-                //全局错误处理
-                JSONObject jsonObject = new JSONObject(jsonStr);
-                Error error = parseError(jsonObject);
-                if (error != null) {
-                    String err2str = Error.Companion.err2str(error);
-                    throw new RuntimeException(err2str);
-                }
-
-                //result提取剥离
-                if (jsonObject.has("result")) {
-                    Object result = jsonObject.opt("result");
-                    if (jsonObject.length() == 1 && result instanceof JSONObject)
-                        jsonStr = result.toString();
-                }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
+                if (!TextUtils.isEmpty(dataParserClass))
+                    mParser = (Parser) Class.forName(dataParserClass).newInstance();
+            } catch (Exception e) {
+                CommonUtil.throwError(Error.ERR_PARSE_CLASS, "can't instantiated custom Parser:" + dataParserClass);
             }
 
+            if (mParser != null) {
+                try {
+
+                    Error error = mParser.onParseError(jsonStr);
+                    if (error != null)
+                        CommonUtil.throwError(error);
+                    String afterJsonStr = mParser.onBeforeParse(jsonStr);
+                    if (!TextUtils.isEmpty(afterJsonStr))
+                        jsonStr = afterJsonStr;
+
+                    //user parse data
+                    @SuppressWarnings("unchecked")
+                    T parse = (T) mParser.onCustomParse(jsonStr);
+                    if (parse != null) {
+                        parse.setCache(responseInfo.isCache);
+                        return parse;
+                    }
+                } catch (Exception e) {
+                    CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "custom parse error:msg is" + e.getMessage()
+                            + ",parse class is" + responseInfo.dataParserClass);
+                }
+            }
+
+            //frame work parse data
             Gson gson = gsonBuilder.create();
             T data = null;
             try {
@@ -150,33 +201,18 @@ public class AichangConverterFactory extends Converter.Factory {
                 e.printStackTrace();
             }
             ULog.out("parse:data=" + data);
-            if (data == null)
-                throw new RuntimeException("数据解析错误");
+            if (data == null) {
+                CommonUtil.throwError(Error.ERR_PARSE_BEAN, "parse error");
+            }
 
             boolean cacheResponse = responseInfo.isCache;
             ULog.out("parse:is cache response=" + cacheResponse);
-            data.setCache(cacheResponse);
-
+            if (data != null) {
+                data.setCache(cacheResponse);
+            }
             return data;
         }
     }
 
-
-    private Error parseError(JSONObject obj) {
-        if (obj != null) {
-            if (obj.has("error") && obj.has("code")) {
-                Error error = new Error();
-                error.setCode(obj.optInt("code", ContextError.NoError));
-                error.setStatus(obj.optString("status", ""));
-                error.setMsg(obj.optString("errmsg", ""));
-                if (TextUtils.isEmpty(error.getMsg()))
-                    error.setMsg(obj.optString("result"));
-                String desc = ContextError.errorDict.get(error.getCode());
-                error.setDesc(desc == null ? "未知错误" : desc);
-                return error;
-            }
-        }
-        return null;
-    }
 
 }

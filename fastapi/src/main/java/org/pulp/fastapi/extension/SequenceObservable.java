@@ -5,6 +5,7 @@ import android.text.TextUtils;
 
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
+import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 
 import java.lang.annotation.Annotation;
@@ -23,12 +24,13 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
      * Created by xinjun on 2019/12/13 10:35
      */
     public interface Unreachable {
-        void onUnreachable(SequenceObservable parent, Error error);
+        void onUnreachable(Error error, String url);
     }
 
     private String[] urls;
     private int currIndex = 0;
     private Unreachable unreachableCallback;//url无法访问回调
+    private Faild faild;
 
     SequenceObservable(Observable<T> upstream, Type observableType, Annotation[] annotations) {
         super(upstream, observableType, annotations);
@@ -43,15 +45,23 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
 
     @Override
     public SequenceObservable<T> success(Success<T> success) {
-        return (SequenceObservable<T>) super.success(data -> {
+        super.success(data -> {
             success.onSuccess(data);
             dispose();
         });
+        super.faild(error -> {
+            ULog.out("success.faild hash=" + this.hashCode());
+            if (unreachableCallback != null)
+                unreachableCallback.onUnreachable(error, getCurrUrl());
+            nextUrl();
+        });
+        return this;
     }
 
     @Override
     public SequenceObservable<T> faild(Faild faild) {
-        return (SequenceObservable<T>) super.faild(faild);
+        this.faild = faild;
+        return this;
     }
 
     @Override
@@ -62,17 +72,16 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
 
     public SequenceObservable<T> unreachable(Unreachable unreachable) {
         this.unreachableCallback = unreachable;
-        return (SequenceObservable<T>) super.faild(error -> {
-            ULog.out("unreachable.error:" + error);
-            if (unreachableCallback != null)
-                unreachableCallback.onUnreachable(SequenceObservable.this, error);
-        });
+        return this;
     }
 
 
-    public void nextUrl() {
+    private void nextUrl() {
         if (currIndex >= urls.length - 1) {
-            ULog.out("all config url is unreachable!!!");
+            Error error = new Error();
+            error.setCode(Error.ERR_ALL_URLS_INVALID);
+            error.setMsg("all url is unreachable");
+            this.faild.onFaild(error);
             dispose();
             return;
         }
@@ -83,10 +92,10 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
 
     String getCurrUrl() {
         if (urls == null || urls.length == 0)
-            throw new RuntimeException("no config url,please use @CONFIG annotation above config api method");
+            throw new RuntimeException("not found urls,please use @MultiPath annotation above api method");
         String currUrl = urls[currIndex];
         if (TextUtils.isEmpty(currUrl))
-            throw new RuntimeException("config url must not be null or emtpy");
+            throw new RuntimeException("@MultiPath value item must not be null or emtpy");
         return currUrl;
     }
 

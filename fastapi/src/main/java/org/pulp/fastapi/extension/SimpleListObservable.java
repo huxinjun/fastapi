@@ -57,8 +57,7 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
             getHandler().post(() -> {
                 Error error = new Error();
                 error.setCode(Error.ERR_NO_MORE_DATA);
-                error.setStatus("no more data");
-                error.setMsg("没有更多数据了");
+                error.setMsg("no more data");
                 Faild faildCallBack = getFaildCallBack();
                 if (faildCallBack != null)
                     faildCallBack.onFaild(error);

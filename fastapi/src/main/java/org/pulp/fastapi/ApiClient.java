@@ -3,6 +3,7 @@ package org.pulp.fastapi;
 
 import android.app.Activity;
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.zhy.http.okhttp.https.HttpsUtils;
 
@@ -11,6 +12,7 @@ import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.factory.AichangCallAdapterFactory;
 import org.pulp.fastapi.factory.AichangCallFactory;
 import org.pulp.fastapi.factory.AichangConverterFactory;
+import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.i.PathConverter;
 import org.pulp.fastapi.life.DestoryHelper;
 import org.pulp.fastapi.life.DestoryWatcher;
@@ -20,8 +22,11 @@ import org.pulp.fastapi.util.ULog;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.Nullable;
+import io.reactivex.annotations.NonNull;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
@@ -47,12 +52,25 @@ public class ApiClient {
     private Retrofit retrofit;
     private Cache cache;
     private String cacheDir;//缓存目路
-    private PathConverter pathConverter;
 
-    private static void init(Context context, String cachePath, PathConverter pathConverter) {
+    private PathConverter pathConverter;
+    private Parser dataParser;
+
+
+    private Map<String, String> commonParams;
+
+    public static void init(@NonNull Context context,
+                            @NonNull String cachePath,
+                            @Nullable PathConverter globlePathConverter,
+                            @Nullable Parser globleParser,
+                            @Nullable Map<String, String> commonParams
+
+    ) {
         getClient().applicationContext = context instanceof Activity ? context.getApplicationContext() : context;
         getClient().cacheDir = cachePath;
-        getClient().pathConverter = pathConverter;
+        getClient().pathConverter = globlePathConverter;
+        getClient().dataParser = globleParser;
+        getClient().commonParams = commonParams;
     }
 
     /**
@@ -102,6 +120,7 @@ public class ApiClient {
                 .sslSocketFactory(sslParams.sSLSocketFactory, sslParams.trustManager)
                 .addInterceptor(logInterceptor)
                 .addInterceptor(INTERCEPTOR_NONET_CACHE_CONTROL)
+                .addInterceptor(INTERCEPTOR_PARSER_SUPPORT)
                 .cache(cache)
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS);
@@ -109,7 +128,7 @@ public class ApiClient {
         OkHttpClient okHttpClient = okHttpBuilder.build();
 
         retrofit = new Retrofit.Builder()
-                .baseUrl("https://www.baidu.com")//不写会报错，动态域会被 @Url 替换
+                .baseUrl("http://fastapi.org")//不写会报错，动态域会被 @Url 替换
                 .callFactory(AichangCallFactory.getInstance(okHttpClient))
                 .addConverterFactory(AichangConverterFactory.create())
                 .addCallAdapterFactory(AichangCallAdapterFactory.create())//支持SimpleObservable
@@ -129,16 +148,13 @@ public class ApiClient {
         return setCacheTag(chain.proceed(request));
     };
 
-    private static Interceptor INTERCEPTOR_API_METHOD_ANNO = chain -> {
+    private static Interceptor INTERCEPTOR_PARSER_SUPPORT = chain -> {
         Request request = chain.request();
-        CacheControl cacheControl = request.cacheControl();
-        if (!CommonUtil.isConnected(getClient().applicationContext)) {
-            if (!cacheControl.noCache())
-                request = request.newBuilder()
-                        .cacheControl(CacheControl.FORCE_CACHE)//只访问缓存
-                        .build();
-        }
-        return setCacheTag(chain.proceed(request));
+        String extra_anno_dataparser = request.header("DataParser");
+        Response response = chain.proceed(request);
+        if (!TextUtils.isEmpty(extra_anno_dataparser))
+            response = setExtraTag(response, "DataParser", extra_anno_dataparser);
+        return response;
     };
 
     /**
@@ -172,11 +188,21 @@ public class ApiClient {
         boolean isCache = response.networkResponse() == null && response.cacheResponse() != null;
         if (!isCache)
             return response;
-        if (response.body() == null)
+        return setExtraTag(response, "Cache", "true");
+    }
+
+    /**
+     * 为了使实体知道自己是否是缓存中的数据
+     * 在body中添加cache标记
+     */
+    private static Response setExtraTag(Response response, String key, String value) {
+        if (response == null || response.body() == null)
+            return response;
+        if (TextUtils.isEmpty(key))
             return response;
         try {
             return response.newBuilder().body(ResponseBody.create(response.body().contentType(),
-                    AichangConverterFactory.TAG_CACHE + response.body().string())).build();
+                    key + "=" + value + AichangConverterFactory.TAG_EXTRA + response.body().string())).build();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -209,4 +235,11 @@ public class ApiClient {
         return getClient().pathConverter;
     }
 
+    Parser getDataParser() {
+        return dataParser;
+    }
+
+    Map<String, String> getCommonParams() {
+        return commonParams;
+    }
 }

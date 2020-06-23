@@ -37,12 +37,9 @@ public class SimpleObserver<T> implements Observer<T> {
             error = Error.Companion.str2err(message);
         } else {
             error = new Error();
-            error.setCode(Error.ERR_APP);
-            error.setStatus("application error,open logcat to preview Warning log or stack detail");
-            error.setMsg(message);
+            error.setCode(Error.ERR_CRASH);
+            error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);
         }
-        ULog.out("onError.message=" + message);
-        ULog.out("onError.error=" + error);
         if (faild != null)
             faild.onFaild(error);
     }

@@ -6,13 +6,17 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.Get;
-import org.pulp.fastapi.anno.MULTI_PATH;
+import org.pulp.fastapi.anno.DataParser;
+import org.pulp.fastapi.anno.MultiPath;
 import org.pulp.fastapi.anno.PAGE;
-import org.pulp.fastapi.anno.PARAM;
-import org.pulp.fastapi.anno.PARAMS;
+import org.pulp.fastapi.anno.Param;
+import org.pulp.fastapi.anno.Params;
+import org.pulp.fastapi.anno.PathParser;
 import org.pulp.fastapi.i.PageCondition;
+import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.i.PathConverter;
 import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.UrlUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -21,7 +25,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import cn.aichang.blackbeauty.base.net.util.UrlUtil;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -44,6 +47,9 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
     private Type observableType;
     private Class<?> rawType;
     private Annotation[] annotations;
+
+    private PathConverter annoPathConverter;
+    private Parser annoParser;
 
     public AichangCallAdapter(CallAdapter<R, Object> realCallApdater, Type observableType
             , Class<?> rawType, @NonNull Annotation[] annotations) {
@@ -94,24 +100,27 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                     for (Annotation annotation : annotations) {
                         if (annotation instanceof PAGE) {
                             parsePageAnno((PAGE) annotation, simpleObservable);
-                        } else if (annotation instanceof PARAM) {
-                            Map<String, String> paramMap = parseParamAnno((PARAM) annotation);
+                        } else if (annotation instanceof Param) {
+                            Map<String, String> paramMap = parseParamAnno((Param) annotation);
                             if (paramMap != null)
                                 annoParams.putAll(paramMap);
-
-                        } else if (annotation instanceof PARAMS) {
-                            Map<String, String> paramsMap = parseParamsAnno((PARAMS) annotation);
+                        } else if (annotation instanceof Params) {
+                            Map<String, String> paramsMap = parseParamsAnno((Params) annotation);
                             if (paramsMap != null)
                                 annoParams.putAll(paramsMap);
-                        } else if (annotation instanceof MULTI_PATH) {
-                            parseConfigAnno((MULTI_PATH) annotation, simpleObservable);
+                        } else if (annotation instanceof MultiPath) {
+                            parseMultiPathAnno((MultiPath) annotation, simpleObservable);
+                        } else if (annotation instanceof DataParser) {
+                            parseDataParserAnno((DataParser) annotation);
+                        } else if (annotation instanceof PathParser) {
+                            parsePathParserAnno((PathParser) annotation);
                         }
                     }
                 }
                 if (staticUrl != null) {
-                    String fullReqUrl = assembleReqUrl(path);
+                    String fullReqUrl = pathConvert(path);
                     Map<String, String> params = new LinkedHashMap<>();
-                    Map<String, String> baseParams = UrlUtil.getBaseParamMap();
+                    Map<String, String> baseParams = Get.getCommonParams();
                     if (baseParams != null)
                         params.putAll(baseParams);
                     params.putAll(annoParams);
@@ -136,7 +145,7 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
 
                     Map<String, String> params = new LinkedHashMap<>();
                     Map<String, String> queryParams = requestParam2map(request); // 此处为原始request中的参数
-                    Map<String, String> baseParams = UrlUtil.getBaseParamMap();
+                    Map<String, String> baseParams = Get.getCommonParams();
                     // 基础参数
                     if (baseParams != null) {
                         params.putAll(baseParams);
@@ -149,11 +158,11 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                     //分页参数
                     if (extraParams != null)
                         params.putAll(extraParams);
-                    String fullReqUrl; // 通过keyname获取请求的真实地址，构造真实的请求地址
+                    String fullReqUrl;
                     if (finalSimpleObservable instanceof SequenceObservable)
-                        fullReqUrl = assembleReqUrl(((SequenceObservable) finalSimpleObservable).getCurrUrl());
+                        fullReqUrl = pathConvert(((SequenceObservable) finalSimpleObservable).getCurrUrl());
                     else
-                        fullReqUrl = assembleReqUrl(path);
+                        fullReqUrl = pathConvert(path);
 
                     String finalUrl = fullReqUrl;
                     if (fullReqUrl == null) {
@@ -172,6 +181,10 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                         //reconstruct post request and add post param body
                         assemblePostRequest(requestBuilder, finalUrl, params);
                     }
+
+
+                    if (annoParser != null)
+                        requestBuilder.addHeader("DataParser", annoParser.getClass().getName());
                 });
                 return simpleObservable;
             }
@@ -205,9 +218,9 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
     }
 
 
-    private void parseConfigAnno(MULTI_PATH MULTIPATHAnno, SimpleObservable<?> simpleObservable) {
-        String[] value = MULTIPATHAnno.value();
-        ULog.out("parseConfigAnno.value=" + Arrays.toString(value));
+    private void parseMultiPathAnno(MultiPath anno, SimpleObservable<?> simpleObservable) {
+        String[] value = anno.value();
+        ULog.out("parseMultiPathAnno.value=" + Arrays.toString(value));
         if (simpleObservable instanceof SequenceObservable) {
             SequenceObservable sequenceObservable = (SequenceObservable) simpleObservable;
             sequenceObservable.setUrls(value);
@@ -230,7 +243,7 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
     }
 
 
-    private Map<String, String> parseParamAnno(PARAM paramAnno) {
+    private Map<String, String> parseParamAnno(Param paramAnno) {
         String[] value = paramAnno.value();
         switch (value.length) {
             case 0:
@@ -252,15 +265,41 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
         }
     }
 
-    private Map<String, String> parseParamsAnno(PARAMS paramsAnno) {
+    private Map<String, String> parseParamsAnno(Params paramsAnno) {
         Map<String, String> ret = new HashMap<>();
-        PARAM[] value = paramsAnno.value();
-        for (PARAM paramAnno : value) {
+        Param[] value = paramsAnno.value();
+        for (Param paramAnno : value) {
             Map<String, String> paramMap = parseParamAnno(paramAnno);
             if (paramMap != null)
                 ret.putAll(paramMap);
         }
         return ret;
+    }
+
+
+    private void parsePathParserAnno(PathParser anno) {
+        Class<? extends PathConverter> value = anno.value();
+        ULog.out("parsePathParserAnno.value=" + value);
+        try {
+            this.annoPathConverter = value.newInstance();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void parseDataParserAnno(DataParser anno) {
+        Class<? extends Parser> value = anno.value();
+        ULog.out("parseDataParserAnno.value=" + value);
+        try {
+            this.annoParser = value.newInstance();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -270,20 +309,21 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
      * @param path path
      * @return 接口地址
      */
-    private String assembleReqUrl(String path) {
-        ULog.out("assembleReqUrl.path:" + path);
+    private String pathConvert(String path) {
         if (TextUtils.isEmpty(path))
             return null;
-        if (path.startsWith("http")) {
+        if (path.startsWith("http") || path.startsWith("/")) {
             return path;
         }
-        String result = path;
-        if (path.startsWith("/") || path.startsWith("http"))
-            return result;
-        PathConverter pathConverter = Get.getPathConverter();
+        //优先使用方法注解的path converter
+        PathConverter pathConverter = annoPathConverter != null ? annoPathConverter : Get.getPathConverter();
+        String url = null;
         if (pathConverter != null)
-            result = pathConverter.onConvert(path);
-        return result;
+            url = pathConverter.onConvert(path);
+        if (TextUtils.isEmpty(url))
+            return path;
+        ULog.out("pathConvert.path=" + path + "--->url=" + url);
+        return url;
     }
 
     private Map<String, String> requestParam2map(Request request) {
