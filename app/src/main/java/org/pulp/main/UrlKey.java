@@ -438,7 +438,7 @@ public class UrlKey implements IModel {
 	public static final String COMMON_DEBUG_PUT = "common_debug_put";
 	public static final String COMMON_CANNOT_LOGIN = "common_cannot_login";
 
-	public Map<String, String> downloadUrls = new HashMap<>();
+	public static Map<String, String> downloadUrls = new HashMap<>();
 	public static final Map<String, String> defaultUrls = new HashMap<String, String>() {
 		/**
 		 *

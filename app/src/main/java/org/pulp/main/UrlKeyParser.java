@@ -25,8 +25,6 @@ public class UrlKeyParser implements Parser<UrlKey> {
     @Override
     public UrlKey onCustomParse(String json) {
         try {
-            UrlKey urlKey = new UrlKey();
-
             JSONObject jsonObject = new JSONObject(json).optJSONObject("content");
             Iterator iterator1 = jsonObject.keys();
             String k1;
@@ -42,14 +40,14 @@ public class UrlKeyParser implements Parser<UrlKey> {
                         k2 = (String) iterator2.next();
                         v2 = v1.optString(k2, "");
                         if (!TextUtils.isEmpty(k2) && !TextUtils.isEmpty(v2)) {
-                            urlKey.downloadUrls.put(k1 + "_" + k2, v2);
+                            UrlKey.downloadUrls.put(k1 + "_" + k2, v2);
                         }
                     }
 
                 }
             }
-            ULog.out("parseUrlKey.downloadUrls =" + urlKey.downloadUrls);
-            return urlKey;
+            ULog.out("parseUrlKey.downloadUrls =" + UrlKey.downloadUrls);
+            return null;
         } catch (JSONException e) {
             e.printStackTrace();
         }

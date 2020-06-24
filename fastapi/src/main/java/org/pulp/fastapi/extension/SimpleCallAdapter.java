@@ -1,11 +1,9 @@
 package org.pulp.fastapi.extension;
 
 import android.text.TextUtils;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.Get;
+import org.pulp.fastapi.anno.Cache;
 import org.pulp.fastapi.anno.DataParser;
 import org.pulp.fastapi.anno.MultiPath;
 import org.pulp.fastapi.anno.PAGE;
@@ -15,16 +13,21 @@ import org.pulp.fastapi.anno.PathParser;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.i.PathConverter;
+import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 import org.pulp.fastapi.util.UrlUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
@@ -41,7 +44,7 @@ import retrofit2.http.POST;
  * 支持SimpleObservable的CallAdapter
  * Created by xinjun on 2019/12/4 16:37
  */
-public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
+public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
     private CallAdapter<R, Object> realCallApdater;
     private Type observableType;
@@ -51,7 +54,7 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
     private PathConverter annoPathConverter;
     private Parser annoParser;
 
-    public AichangCallAdapter(CallAdapter<R, Object> realCallApdater, Type observableType
+    public SimpleCallAdapter(CallAdapter<R, Object> realCallApdater, Type observableType
             , Class<?> rawType, @NonNull Annotation[] annotations) {
         this.realCallApdater = realCallApdater;
         this.observableType = observableType;
@@ -71,10 +74,12 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
 
         //动态url
         try {
+            AtomicReference<String> staticUrl = new AtomicReference<>();
             String path = findPath();
             ULog.out("find path from method annotation:" + path);
             if (TextUtils.isEmpty(path))
                 return adapt;
+            path = path.trim();
 
 
             if (adapt instanceof Observable) {
@@ -83,15 +88,14 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                 Observable<R> observableOnMainThread = IOObservable.subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread());
 
                 SimpleObservable<?> simpleObservable = null;
-                StaticUrl staticUrl = null;
                 if (rawType == SimpleListObservable.class)
                     simpleObservable = new SimpleListObservable(observableOnMainThread, observableType, annotations);
                 else if (rawType == SequenceObservable.class)
                     simpleObservable = new SequenceObservable(observableOnMainThread, observableType, annotations);
                 else if (rawType == SimpleObservable.class)
                     simpleObservable = new SimpleObservable(observableOnMainThread, observableType, annotations);
-                else if (rawType == StaticUrl.class)
-                    staticUrl = new StaticUrl();
+                else if (rawType == URL.class)
+                    simpleObservable = new SimpleObservable(IOObservable, observableType, annotations);
 
                 IOObservable.setListener(simpleObservable);
 
@@ -114,22 +118,10 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                             parseDataParserAnno((DataParser) annotation);
                         } else if (annotation instanceof PathParser) {
                             parsePathParserAnno((PathParser) annotation);
+                        } else if (annotation instanceof Cache) {
+                            parseCacheAnno((Cache) annotation, simpleObservable);
                         }
                     }
-                }
-                if (staticUrl != null) {
-                    String fullReqUrl = pathConvert(path);
-                    Map<String, String> params = new LinkedHashMap<>();
-                    Map<String, String> baseParams = Get.getCommonParams();
-                    if (baseParams != null)
-                        params.putAll(baseParams);
-                    params.putAll(annoParams);
-                    String finalUrl = UrlUtil.map2url(fullReqUrl, params);
-                    ULog.out("adapt.staticUrl:" + finalUrl);
-                    ULog.out("adapt.base params:" + UrlUtil.map2str(baseParams));
-                    ULog.out("adapt.anno params:" + UrlUtil.map2str(annoParams));
-                    staticUrl.setUrl(finalUrl);
-                    return staticUrl;
                 }
 
                 if (simpleObservable == null)
@@ -137,7 +129,8 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
 
                 simpleObservable.setPath(path);
                 SimpleObservable<?> finalSimpleObservable = simpleObservable;
-                simpleObservable.setModifyUrlCallback((requestBuilder, extraParams) -> {
+                String finalPath = path;
+                simpleObservable.setRequestRebuilder((requestBuilder, extraParams) -> {
 
                     Request request = requestBuilder.build();
 
@@ -147,45 +140,81 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
                     Map<String, String> queryParams = requestParam2map(request); // 此处为原始request中的参数
                     Map<String, String> baseParams = Get.getCommonParams();
                     // 基础参数
-                    if (baseParams != null) {
+                    if (baseParams != null)
                         params.putAll(baseParams);
-                    }
+
                     //注解参数
                     params.putAll(annoParams);
-                    //方法参数
-                    if (queryParams != null)
-                        params.putAll(queryParams);
+
                     //分页参数
                     if (extraParams != null)
                         params.putAll(extraParams);
-                    String fullReqUrl;
-                    if (finalSimpleObservable instanceof SequenceObservable)
-                        fullReqUrl = pathConvert(((SequenceObservable) finalSimpleObservable).getCurrUrl());
-                    else
-                        fullReqUrl = pathConvert(path);
 
-                    String finalUrl = fullReqUrl;
-                    if (fullReqUrl == null) {
-                        Log.d("fullRequrl", "url: " + fullReqUrl);
+                    String newPath = finalPath;
+                    String convertUrl = null;
+                    if (finalSimpleObservable instanceof SequenceObservable)
+                        newPath = ((SequenceObservable) finalSimpleObservable).getCurrPath();
+
+                    boolean needConvertPath = !finalPath.startsWith("http") && !finalPath.startsWith("/");
+                    if (needConvertPath) {
+                        convertUrl = pathConvert(newPath);
+                        //check url valid
+                        try {
+                            assert convertUrl != null;
+                            new Request.Builder().url(convertUrl).build();
+                        } catch (IllegalArgumentException e) {
+                            CommonUtil.throwError(Error.ERR_CRASH, "convert url invalid,path="
+                                    + newPath
+                                    + ",url="
+                                    + convertUrl
+                                    + ",PathConverter="
+                                    + (getPathConvert() == null ? "null" : getPathConvert().getClass().getName())
+                            );
+                        }
                     }
+
+                    ULog.out("before url:" + convertUrl);
+
                     // 开始根据不同请求方式构建新Request 并返回
                     if (!isPostMethod) {
+                        //GET
                         //重组的get请求的request对象必须有params,不然请求不会携带url中的参数,参见:
                         //RealConnection.newCodec-->Http2Codec.http2HeadersList-->RequestLine.requestPath
-                        finalUrl = UrlUtil.map2url(fullReqUrl, params);
-                        requestBuilder.url(finalUrl);
+                        if (!TextUtils.isEmpty(convertUrl)) {
+                            params.putAll(queryParams);
+                            convertUrl = UrlUtil.map2url(convertUrl, params);
+                        } else
+                            convertUrl = UrlUtil.map2url(request.url().toString(), params);
+
+                        ULog.out("after url:" + convertUrl);
+                        requestBuilder.url(convertUrl);
                     } else {
+                        //POST
                         //query param should append to url
-                        if (queryParams != null && queryParams.size() > 0)
-                            finalUrl = UrlUtil.map2url(fullReqUrl, queryParams);
+                        if (!TextUtils.isEmpty(convertUrl))
+                            convertUrl = UrlUtil.map2url(convertUrl, queryParams);
+                        else
+                            convertUrl = request.url().toString();
                         //reconstruct post request and add post param body
-                        assemblePostRequest(requestBuilder, finalUrl, params);
+                        assemblePostRequest(requestBuilder, convertUrl, params);
                     }
 
 
                     if (annoParser != null)
                         requestBuilder.addHeader("DataParser", annoParser.getClass().getName());
+                    if (rawType == URL.class) {
+                        requestBuilder.addHeader("StaticUrl", "true");
+                        staticUrl.set(convertUrl);
+                    }
                 });
+
+
+                if (rawType == URL.class) {
+                    simpleObservable.subscribeActual(null);
+                    if (TextUtils.isEmpty(staticUrl.get()))
+                        return null;
+                    return new URL(staticUrl.get());
+                }
                 return simpleObservable;
             }
         } catch (Exception e) {
@@ -223,7 +252,7 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
         ULog.out("parseMultiPathAnno.value=" + Arrays.toString(value));
         if (simpleObservable instanceof SequenceObservable) {
             SequenceObservable sequenceObservable = (SequenceObservable) simpleObservable;
-            sequenceObservable.setUrls(value);
+            sequenceObservable.setPaths(value);
         }
     }
 
@@ -302,6 +331,13 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
         }
     }
 
+    private void parseCacheAnno(Cache anno, SimpleObservable<?> simpleObservable) {
+        String value = anno.value();
+        ULog.out("parseCacheAnno.value=" + value);
+        if (simpleObservable != null)
+            simpleObservable.cachePolicy(value);
+    }
+
 
     /**
      * 将path转换为url
@@ -315,8 +351,8 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
         if (path.startsWith("http") || path.startsWith("/")) {
             return path;
         }
-        //优先使用方法注解的path converter
-        PathConverter pathConverter = annoPathConverter != null ? annoPathConverter : Get.getPathConverter();
+
+        PathConverter pathConverter = getPathConvert();
         String url = null;
         if (pathConverter != null)
             url = pathConverter.onConvert(path);
@@ -324,6 +360,11 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
             return path;
         ULog.out("pathConvert.path=" + path + "--->url=" + url);
         return url;
+    }
+
+    private PathConverter getPathConvert() {
+        //优先使用方法注解的path converter
+        return annoPathConverter != null ? annoPathConverter : Get.getPathConverter();
     }
 
     private Map<String, String> requestParam2map(Request request) {
@@ -342,7 +383,6 @@ public class AichangCallAdapter<R> implements CallAdapter<R, Object> {
 
     private void assemblePostRequest(Request.Builder builder, String url, Map<String, String> params) {
         if (params == null || params.size() == 0) {
-            builder.url(url);
             return;
         }
 

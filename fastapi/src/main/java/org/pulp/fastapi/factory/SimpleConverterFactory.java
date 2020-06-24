@@ -9,12 +9,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.pulp.fastapi.Get;
 import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.model.IModel;
-import org.pulp.fastapi.model._String;
+import org.pulp.fastapi.model.Str;
 import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 import org.pulp.fastapi.model.Error;
@@ -33,9 +31,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * 数据实体转换
  * Created by xinjun on 2019/11/30 11:20
  */
-public class AichangConverterFactory extends Converter.Factory {
+public class SimpleConverterFactory extends Converter.Factory {
 
-    private static final String TAG = AichangConverterFactory.class.getSimpleName();
+    private static final String TAG = SimpleConverterFactory.class.getSimpleName();
     public static final String TAG_EXTRA = "@#!!!EXTRA_TAG_NO_REPEAT!!!#@";
 
 
@@ -73,15 +71,15 @@ public class AichangConverterFactory extends Converter.Factory {
 
     private StringModelConverter stringModelConverter = new StringModelConverter();//由于SimpleObservable限制了实体类型,使用此对象支持String
 
-    public static AichangConverterFactory create() {
-        return new AichangConverterFactory();
+    public static SimpleConverterFactory create() {
+        return new SimpleConverterFactory();
     }
 
     @Nullable
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
         ULog.out("responseBodyConverter:type=" + type);
-        if (type == _String.class) {
+        if (type == Str.class) {
             return stringModelConverter;
         } else {
             return new JsonConverter<>(type);
@@ -133,10 +131,13 @@ public class AichangConverterFactory extends Converter.Factory {
      * 可直接返回请求结果的字符序列
      * Created by xinjun on 2019/12/4 16:25
      */
-    private class StringModelConverter implements Converter<ResponseBody, _String> {
+    private class StringModelConverter implements Converter<ResponseBody, Str> {
         @Override
-        public _String convert(@NonNull ResponseBody value) throws IOException {
-            return new _String(getResponseContent(value).json);
+        public Str convert(@NonNull ResponseBody value) throws IOException {
+            ResponseInfo responseContent = getResponseContent(value);
+            Str str = new Str(responseContent.json);
+            str.setCache(responseContent.isCache);
+            return str;
         }
     }
 

@@ -4,8 +4,7 @@ package org.pulp.fastapi.factory;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.pulp.fastapi.extension.AichangCallAdapter;
-import org.pulp.fastapi.extension.StaticUrl;
+import org.pulp.fastapi.extension.SimpleCallAdapter;
 import org.pulp.fastapi.extension.SequenceObservable;
 import org.pulp.fastapi.extension.SimpleListObservable;
 import org.pulp.fastapi.extension.SimpleObservable;
@@ -14,6 +13,7 @@ import org.pulp.fastapi.util.ULog;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.List;
 
 import io.reactivex.Observable;
@@ -36,10 +36,10 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * <p>
  * Created by xinjun on 2019/12/4 16:28
  */
-public class AichangCallAdapterFactory extends CallAdapter.Factory {
+public class SimpleCallAdapterFactory extends CallAdapter.Factory {
 
-    public static AichangCallAdapterFactory create() {
-        return new AichangCallAdapterFactory();
+    public static SimpleCallAdapterFactory create() {
+        return new SimpleCallAdapterFactory();
     }
 
     @Nullable
@@ -52,7 +52,7 @@ public class AichangCallAdapterFactory extends CallAdapter.Factory {
         if (rawType == SimpleObservable.class
                 || rawType == SimpleListObservable.class
                 || rawType == SequenceObservable.class
-                || rawType == StaticUrl.class) {
+                || rawType == URL.class) {
             RxJava2CallAdapterFactory rxCallAdapterFactory = findRxCallAdapterFactory(retrofit);
             if (rxCallAdapterFactory == null)
                 return null;
@@ -72,7 +72,7 @@ public class AichangCallAdapterFactory extends CallAdapter.Factory {
                 observableType = returnType;
             }
             CallAdapter<?, ?> callAdapter = rxCallAdapterFactory.get(genericSuperclass, annotations, retrofit);
-            return new AichangCallAdapter(callAdapter, observableType, rawType, annotations);
+            return new SimpleCallAdapter(callAdapter, observableType, rawType, annotations);
         }
         return null;
     }

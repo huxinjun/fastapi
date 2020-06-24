@@ -123,38 +123,17 @@ public class UrlUtil {
      * @param map 参数
      * @return 完整的url
      */
-    public static String map2url(String url, Map<String, String> map) {
+    public static String map2url(String url, Map<String, String> map) throws IllegalArgumentException {
         if (map == null || map.size() == 0)
             return url;
 
+
         HttpUrl.Builder httpUrlBuilder = new Request.Builder().url(url).build().url().newBuilder();
 
-        Iterator<Map.Entry<String, String>> iterator = map.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> next = iterator.next();
+        for (Map.Entry<String, String> next : map.entrySet()) {
             httpUrlBuilder.addQueryParameter(next.getKey(), next.getValue());
         }
         return httpUrlBuilder.toString();
-
-
-//        StringBuilder paramBuilder = new StringBuilder(url);
-//        if (!url.contains("?"))
-//            paramBuilder.append("?");
-//        if (paramBuilder.charAt(paramBuilder.length() - 1) != '&' && paramBuilder.indexOf("=") > 0)
-//            paramBuilder.append("&");
-//
-//
-//        Iterator<Map.Entry<String, String>> iterator = map.entrySet().iterator();
-//        while (iterator.hasNext()) {
-//            Map.Entry<String, String> next = iterator.next();
-//            paramBuilder.append(next.getKey());
-//            paramBuilder.append("=");
-//            paramBuilder.append(next.getValue());
-//            paramBuilder.append("&");
-//        }
-//        paramBuilder.deleteCharAt(paramBuilder.length() - 1);
-//
-//        return paramBuilder.toString();
     }
 
 
@@ -174,18 +153,6 @@ public class UrlUtil {
 
         for (String key : httpUrl.queryParameterNames())
             result.put(key, httpUrl.queryParameter(key));
-
-
-//        try {
-//            String s = url.split("\\?")[1];
-//            String[] split = s.split("&");
-//            for (String str : split) {
-//                String[] p = str.split("=");
-//                result.put(p[0], p[1]);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
 
         return result;
 

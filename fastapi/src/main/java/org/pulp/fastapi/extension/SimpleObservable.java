@@ -7,7 +7,7 @@ import android.widget.Toast;
 
 import org.pulp.fastapi.CachePolicy;
 import org.pulp.fastapi.Get;
-import org.pulp.fastapi.factory.AichangCallFactory;
+import org.pulp.fastapi.factory.SimpleCallFactory;
 import org.pulp.fastapi.life.DestoryWatcher;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -78,7 +79,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      * Created by xinjun on 2019/12/9 11:16
      */
     public interface Faild {
-        void onFaild(Error error);
+        void onFaild(@NonNull Error error);
     }
 
 
@@ -87,7 +88,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      * Created by xinjun on 2019/12/9 14:46
      * Update: 这里修改modify的返回值为新的request请求。
      */
-    interface ModifyUrlCallback {
+    interface RequestRebuilder {
         void onModify(Request.Builder builder, Map<String, String> params);
     }
 
@@ -105,7 +106,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private CacheControl cacheControl;//动态切换的缓存策略
     private String cacheControlStr;//动态切换的缓存策略,字符串形式
     private T currData;
-    private ModifyUrlCallback mModifyUrlCallback;
+    private RequestRebuilder mRequestRebuilder;
 
     private String path;//与之关联的path
     private AtomicReference<Disposable> atomicReference = new AtomicReference<>();
@@ -195,11 +196,11 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     @Override
     public void runInIO() {
         ULog.out("RequestWatcher.runInIO=" + Thread.currentThread().getId());
-        AichangCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), request -> {
+        SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), request -> {
             ULog.out("RequestWatcher.callback=" + Thread.currentThread().getId());
             Request.Builder builder = request.newBuilder();
-            if (mModifyUrlCallback != null)
-                mModifyUrlCallback.onModify(builder, extraParam);
+            if (mRequestRebuilder != null)
+                mRequestRebuilder.onModify(builder, extraParam);
             applyCacheControl(builder);
             cacheUseAllSupport(builder, mInternalObserver);
             return builder.build();
@@ -438,7 +439,11 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     @Override
     protected void subscribeActual(Observer<? super T> observer) {
         mInternalObserver = new InternalObserver(observer);
-        upstream.subscribe(mInternalObserver);
+        try {
+            upstream.subscribe(mInternalObserver);
+        } catch (Throwable throwable) {
+            mInternalObserver.onError(throwable);
+        }
     }
 
 
@@ -463,8 +468,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         return atomicReference.get() == DisposableHelper.DISPOSED;
     }
 
-    void setModifyUrlCallback(ModifyUrlCallback mModifyUrlCallback) {
-        this.mModifyUrlCallback = mModifyUrlCallback;
+    void setRequestRebuilder(RequestRebuilder mRequestRebuilder) {
+        this.mRequestRebuilder = mRequestRebuilder;
     }
 
     public String getPath() {

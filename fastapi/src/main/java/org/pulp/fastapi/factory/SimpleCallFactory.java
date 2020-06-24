@@ -20,19 +20,19 @@ import okhttp3.Request;
  * 也可以用来打自定义的日志
  * Created by xinjun on 2019/12/6 13:50
  */
-public class AichangCallFactory implements Call.Factory {
+public class SimpleCallFactory implements Call.Factory {
 
-    private static AichangCallFactory mInstance;
+    private static SimpleCallFactory mInstance;
 
     private OkHttpClient okHttpClient;
 
-    public static AichangCallFactory getInstance(OkHttpClient okHttpClient) {
+    public static SimpleCallFactory getInstance(OkHttpClient okHttpClient) {
         if (mInstance == null)
-            mInstance = new AichangCallFactory(okHttpClient);
+            mInstance = new SimpleCallFactory(okHttpClient);
         return mInstance;
     }
 
-    private AichangCallFactory(OkHttpClient okHttpClient) {
+    private SimpleCallFactory(OkHttpClient okHttpClient) {
         this.okHttpClient = okHttpClient;
     }
 

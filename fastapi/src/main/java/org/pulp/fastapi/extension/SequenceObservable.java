@@ -5,7 +5,6 @@ import android.text.TextUtils;
 
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
-import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 
 import java.lang.annotation.Annotation;
@@ -20,14 +19,14 @@ import io.reactivex.Observable;
 public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
 
     /**
-     * 配置的url无法访问回调
+     * 配置的path无法访问回调
      * Created by xinjun on 2019/12/13 10:35
      */
     public interface Unreachable {
-        void onUnreachable(Error error, String url);
+        void onUnreachable(Error error, String path);
     }
 
-    private String[] urls;
+    private String[] paths;
     private int currIndex = 0;
     private Unreachable unreachableCallback;//url无法访问回调
     private Faild faild;
@@ -52,7 +51,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
         super.faild(error -> {
             ULog.out("success.faild hash=" + this.hashCode());
             if (unreachableCallback != null)
-                unreachableCallback.onUnreachable(error, getCurrUrl());
+                unreachableCallback.onUnreachable(error, getCurrPath());
             nextUrl();
         });
         return this;
@@ -77,10 +76,10 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
 
 
     private void nextUrl() {
-        if (currIndex >= urls.length - 1) {
+        if (currIndex >= paths.length - 1) {
             Error error = new Error();
             error.setCode(Error.ERR_ALL_URLS_INVALID);
-            error.setMsg("all url is unreachable");
+            error.setMsg("all path is unreachable");
             this.faild.onFaild(error);
             dispose();
             return;
@@ -90,17 +89,17 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     }
 
 
-    String getCurrUrl() {
-        if (urls == null || urls.length == 0)
-            throw new RuntimeException("not found urls,please use @MultiPath annotation above api method");
-        String currUrl = urls[currIndex];
-        if (TextUtils.isEmpty(currUrl))
+    String getCurrPath() {
+        if (paths == null || paths.length == 0)
+            throw new RuntimeException("not found paths,please use @MultiPath annotation above api method");
+        String currPath = paths[currIndex];
+        if (TextUtils.isEmpty(currPath))
             throw new RuntimeException("@MultiPath value item must not be null or emtpy");
-        return currUrl;
+        return currPath;
     }
 
 
-    void setUrls(String[] urls) {
-        this.urls = urls;
+    void setPaths(String[] paths) {
+        this.paths = paths;
     }
 }

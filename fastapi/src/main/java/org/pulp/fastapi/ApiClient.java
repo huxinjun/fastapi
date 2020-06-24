@@ -7,19 +7,21 @@ import android.text.TextUtils;
 
 import com.zhy.http.okhttp.https.HttpsUtils;
 
-import org.pulp.fastapi.extension.StaticUrl;
 import org.pulp.fastapi.extension.SimpleObservable;
-import org.pulp.fastapi.factory.AichangCallAdapterFactory;
-import org.pulp.fastapi.factory.AichangCallFactory;
-import org.pulp.fastapi.factory.AichangConverterFactory;
+import org.pulp.fastapi.factory.SimpleCallAdapterFactory;
+import org.pulp.fastapi.factory.SimpleCallFactory;
+import org.pulp.fastapi.factory.SimpleConverterFactory;
 import org.pulp.fastapi.i.Parser;
 import org.pulp.fastapi.i.PathConverter;
 import org.pulp.fastapi.life.DestoryHelper;
 import org.pulp.fastapi.life.DestoryWatcher;
+import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -71,6 +73,7 @@ public class ApiClient {
         getClient().pathConverter = globlePathConverter;
         getClient().dataParser = globleParser;
         getClient().commonParams = commonParams;
+        getClient().init();
     }
 
     /**
@@ -107,9 +110,18 @@ public class ApiClient {
      * 初始化OkHttpClient,Retrofit,HttpLog
      */
     private void init() {
-        File httpCacheDirectory = new File(cacheDir, "HttpCache");//这里为了方便直接把文件放在了SD卡根目录的HttpCache中，一般放在context.getCacheDir()中
+        File cacheFile = new File(cacheDir, "CacheFile");//这里为了方便直接把文件放在了SD卡根目录的HttpCache中，一般放在context.getCacheDir()中
+//        try {
+//            ULog.out("initcache=" + cacheDir);
+//            File cacheDirFile = new File(cacheDir);
+//            boolean b = cacheDirFile.mkdir();
+//            ULog.out("initcache dir:" + b);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            ULog.out("initcache:" + e.getMessage());
+//        }
         int cacheSize = 10 * 1024 * 1024;//设置缓存文件大小为10M
-        cache = new Cache(httpCacheDirectory, cacheSize);
+        cache = new Cache(cacheFile, cacheSize);
         //声明日志类
         HttpLoggingInterceptor logInterceptor = new HttpLoggingInterceptor();
         //设定日志级别
@@ -119,6 +131,7 @@ public class ApiClient {
         OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder()
                 .sslSocketFactory(sslParams.sSLSocketFactory, sslParams.trustManager)
                 .addInterceptor(logInterceptor)
+                .addInterceptor(INTERCEPTOR_STATIC_URL_SUPPORT)
                 .addInterceptor(INTERCEPTOR_NONET_CACHE_CONTROL)
                 .addInterceptor(INTERCEPTOR_PARSER_SUPPORT)
                 .cache(cache)
@@ -129,9 +142,9 @@ public class ApiClient {
 
         retrofit = new Retrofit.Builder()
                 .baseUrl("http://fastapi.org")//不写会报错，动态域会被 @Url 替换
-                .callFactory(AichangCallFactory.getInstance(okHttpClient))
-                .addConverterFactory(AichangConverterFactory.create())
-                .addCallAdapterFactory(AichangCallAdapterFactory.create())//支持SimpleObservable
+                .callFactory(SimpleCallFactory.getInstance(okHttpClient))
+                .addConverterFactory(SimpleConverterFactory.create())
+                .addCallAdapterFactory(SimpleCallAdapterFactory.create())//支持SimpleObservable
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())//支持rxjava
                 .build();
     }
@@ -157,6 +170,14 @@ public class ApiClient {
         return response;
     };
 
+
+    private static Interceptor INTERCEPTOR_STATIC_URL_SUPPORT = chain -> {
+        Request request = chain.request();
+        if (request.header("StaticUrl") != null)
+            CommonUtil.throwError(Error.STATIC_URL_TRICK, "this is a trick!");
+        return chain.proceed(request);
+    };
+
     /**
      *
      */
@@ -170,8 +191,6 @@ public class ApiClient {
                         SimpleObservable simpleObservable = (SimpleObservable) invoke;
                         if (destoryWatcher != null)
                             DestoryHelper.add(destoryWatcher, simpleObservable);
-                    } else if (invoke instanceof StaticUrl) {
-                        StaticUrl.assemble((StaticUrl) invoke, method, args);
                     }
                     return invoke;
                 });
@@ -202,7 +221,7 @@ public class ApiClient {
             return response;
         try {
             return response.newBuilder().body(ResponseBody.create(response.body().contentType(),
-                    key + "=" + value + AichangConverterFactory.TAG_EXTRA + response.body().string())).build();
+                    key + "=" + value + SimpleConverterFactory.TAG_EXTRA + response.body().string())).build();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -218,7 +237,6 @@ public class ApiClient {
     static ApiClient getClient() {
         if (client == null) {
             client = new ApiClient();
-            client.init();
         }
         return client;
     }
