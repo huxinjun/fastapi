@@ -17,8 +17,10 @@ import org.pulp.fastapi.factory.SimpleCallFactory;
 import org.pulp.fastapi.factory.SimpleConverterFactory;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.life.ActivityLifeWatcher;
+import org.pulp.fastapi.life.Bridge;
 import org.pulp.fastapi.life.DestoryHelper;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.ChainUtil;
@@ -49,10 +51,7 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
 /**
- * okhttp+retrofit+rxjava实现的网络请求框架
- * 在基础功能上添加了:
- * 根据API中配置的方法注解确定请求URL
- * 简化API调用的方式
+ * 创建请求入口
  * Created by xinjun on 2019/11/29 16:44
  */
 public class API {
@@ -72,7 +71,7 @@ public class API {
     /**
      * 获取api
      */
-    public static <T> T get(@NonNull Activity activity, @NonNull Class<T> apiclass) {
+    public static <T> T get(Activity activity, @NonNull Class<T> apiclass) {
         if (getClient().setting == null)
             throw new RuntimeException("not init,please invoke init method");
         return getClient().createProxyApi(activity, apiclass);
@@ -133,6 +132,7 @@ public class API {
         String extra_anno_parser_before = request.header(InterpreterParseBefore.HEADER_FLAG);
         String extra_anno_parser_error = request.header(InterpreterParseError.HEADER_FLAG);
         String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
+        String extra_anno_parser_after = request.header(InterpreterParserAfter.HEADER_FLAG);
         Response response = chain.proceed(request);
         if (!TextUtils.isEmpty(extra_anno_parser_before))
             response = setExtraTag(response, InterpreterParseBefore.HEADER_FLAG, extra_anno_parser_before);
@@ -140,6 +140,8 @@ public class API {
             response = setExtraTag(response, InterpreterParseError.HEADER_FLAG, extra_anno_parser_error);
         if (!TextUtils.isEmpty(extra_anno_parser_custom))
             response = setExtraTag(response, InterpreterParserCustom.HEADER_FLAG, extra_anno_parser_custom);
+        if (!TextUtils.isEmpty(extra_anno_parser_after))
+            response = setExtraTag(response, InterpreterParserAfter.HEADER_FLAG, extra_anno_parser_after);
         return response;
     };
 
@@ -192,7 +194,7 @@ public class API {
                     Log.out("createProxyApi.invoke=" + invoke);
                     if (invoke instanceof SimpleObservable) {
                         SimpleObservable simpleObservable = (SimpleObservable) invoke;
-                        DestoryHelper.add(activity, simpleObservable);
+                        Bridge.addDestoryListener(activity, simpleObservable);
                     }
 
                     lock.unlock();

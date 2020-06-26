@@ -40,13 +40,23 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     public SequenceObservable<T> refresh() {
         setExtraParam(null);
         setCurrData(null);
-        return (SequenceObservable<T>) super.refresh();
+        super.success(data -> {
+            dispose();
+        });
+        super.faild(error -> {
+            Log.out("success.faild hash=" + this.hashCode());
+            if (unreachableCallback != null)
+                unreachableCallback.onUnreachable(error, getCurrPath());
+            nextUrl();
+        });
+        return this;
     }
 
     @Override
     public SequenceObservable<T> success(Success<T> success) {
         super.success(data -> {
-            success.onSuccess(data);
+            if (success != null)
+                success.onSuccess(data);
             dispose();
         });
         super.faild(error -> {

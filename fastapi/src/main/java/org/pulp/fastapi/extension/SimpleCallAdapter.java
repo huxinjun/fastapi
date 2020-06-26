@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.anno.Cache;
 import org.pulp.fastapi.anno.MultiPath;
+import org.pulp.fastapi.anno.OnAfterParse;
 import org.pulp.fastapi.anno.OnBeforeParse;
 import org.pulp.fastapi.anno.OnCustomParse;
 import org.pulp.fastapi.anno.OnErrorParse;
@@ -12,6 +13,7 @@ import org.pulp.fastapi.anno.PAGE;
 import org.pulp.fastapi.anno.Param;
 import org.pulp.fastapi.anno.Params;
 import org.pulp.fastapi.anno.PathParser;
+import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
@@ -65,6 +67,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
     private List<Class<?>> parserBeforeClasses;
     private List<Class<?>> parserErrorClasses;
     private List<Class<?>> parserCustomClasses;
+    private List<Class<?>> parserAfterClasses;
 
     public SimpleCallAdapter(CallAdapter<R, Object> realCallApdater, Type observableType
             , Class<?> rawType, @NonNull Annotation[] annotations, @NonNull Retrofit retrofit, Class<?> apiClass) {
@@ -120,6 +123,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                 parseOnBeforeParseAnno(findAnnoByClass(annotations, OnBeforeParse.class));
                 parseOnErrorParseAnno(findAnnoByClass(annotations, OnErrorParse.class));
                 parseOnCustomParseAnno(findAnnoByClass(annotations, OnCustomParse.class));
+                parseOnAfterParseAnno(findAnnoByClass(annotations, OnAfterParse.class));
                 if (annotations != null && annotations.length > 0) {
                     for (Annotation annotation : annotations) {
                         if (annotation instanceof PAGE) {
@@ -225,6 +229,8 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         requestBuilder.addHeader(InterpreterParseError.HEADER_FLAG, classArr2str(parserErrorClasses));
                     if (!TextUtils.isEmpty(classArr2str(parserCustomClasses)))
                         requestBuilder.addHeader(InterpreterParserCustom.HEADER_FLAG, classArr2str(parserCustomClasses));
+                    if (!TextUtils.isEmpty(classArr2str(parserAfterClasses)))
+                        requestBuilder.addHeader(InterpreterParserAfter.HEADER_FLAG, classArr2str(parserAfterClasses));
 
 
                     if (rawType == URL.class) {
@@ -395,8 +401,25 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
         }
     }
 
+    private void parseOnAfterParseAnno(@Nullable OnAfterParse anno) {
+
+        parserAfterClasses = new ArrayList<>();
+
+        if (anno != null) {
+            Class<? extends InterpreterParserAfter> methodParser = anno.value();
+            Log.out("parseOnAfterParseAnno.methodParser=" + methodParser);
+            parserAfterClasses.add(methodParser);
+        }
+
+        OnAfterParse classParser = apiClass.getAnnotation(OnAfterParse.class);
+        if (classParser != null) {
+            Log.out("parseOnAfterParseAnno.classParser=" + classParser);
+            parserAfterClasses.add(classParser.value());
+        }
+    }
+
     private void parseCacheAnno(Cache anno, SimpleObservable<?> simpleObservable) {
-        String value = anno.value();
+        String value = anno.value().getValue();
         Log.out("parseCacheAnno.value=" + value);
         if (simpleObservable != null)
             simpleObservable.cachePolicy(value);

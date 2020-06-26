@@ -16,7 +16,9 @@ public class DestoryHelper {
 
     private static Map<Integer, Set<DestoryWatcher.DestoryListener>> listeners = new WeakHashMap<>();
 
-    public static void add(Object fromObj, DestoryWatcher.DestoryListener listener) {
+    static void add(Object fromObj, DestoryWatcher.DestoryListener listener) {
+        if (fromObj == null)
+            return;
         Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj.hashCode());
         if (destoryListeners == null) {
             destoryListeners = new HashSet<>();
@@ -26,7 +28,9 @@ public class DestoryHelper {
         Log.out("set.watcher_size=" + listeners.size() + ",listener_size=" + destoryListeners.size() + ",fromObj=" + fromObj);
     }
 
-    public static void notify(Object fromObj) {
+    static void notify(Object fromObj) {
+        if (fromObj == null)
+            return;
         Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj.hashCode());
         if (destoryListeners == null || destoryListeners.size() == 0)
             return;

@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
@@ -40,6 +41,9 @@ public interface Setting {
 
     @Nullable
     InterpreterParseError onErrorParse();
+
+    @Nullable
+    InterpreterParserAfter onAfterParse();
 
     @Nullable
     Map<String, String> onGetCommonParams();

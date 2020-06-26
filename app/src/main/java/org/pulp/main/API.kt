@@ -13,6 +13,7 @@ import java.net.URL
 //@OnCustomParse(TestClassParserAnno::class)
 //@OnErrorParse(TestClassParserAnno::class)
 //@OnBeforeParse(TestClassParserAnno::class)
+@OnAfterParse(TestClassParserAnno::class)
 interface TestAPI {
 
     @GET("getConfig")
@@ -37,6 +38,7 @@ interface TestAPI {
     //    @OnBeforeParse(TestMethodParserAnno::class)
 //    @OnCustomParse(TestMethodParserAnno::class)
 //    @OnErrorParse(TestMethodParserAnno::class)
+    @OnAfterParse(TestMethodParserAnno::class)
     @GET(UrlKey.COMMON_FLASHSCREEN)
     fun getDataConvertPath(): SimpleObservable<TestModel>
 

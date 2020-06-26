@@ -292,7 +292,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 Log.out("cacheUseAllSupport.cache data=" + cacheData);
                 String beforeCacheControl = getCacheControl();
                 Log.out("cacheUseAllSupport.beforeCacheControl=" + beforeCacheControl);
-                cachePolicy(CachePolicy.ONLY_NETWORK);//force change cache policy once for current request
+                cachePolicy(CachePolicy.ONLY_NETWORK.getValue());//force change cache policy once for current request
                 mHandler.post(() -> {
                     if (observer != null)
                         observer.onNext(cacheData);

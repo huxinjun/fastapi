@@ -4,11 +4,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.util.Log;
 
-public class TestMethodParserAnno implements InterpreterParserCustom<TestModel>, InterpreterParseError, InterpreterParseBefore {
+public class TestMethodParserAnno implements InterpreterParserCustom<TestModel>, InterpreterParseError, InterpreterParseBefore, InterpreterParserAfter<String> {
     @Override
     public String onBeforeParse(String json) {
         Log.out("TestMethodParserAnno.onBeforeParse");
@@ -38,5 +40,10 @@ public class TestMethodParserAnno implements InterpreterParserCustom<TestModel>,
         TestModel testModel = new TestModel();
         testModel.testFrom = "method onCustomParse";
         return testModel;
+    }
+
+    @Override
+    public void onParseCompleted(String bean) {
+        Log.out("TestMethodParserAnno.onParseCompleted:" + bean);
     }
 }

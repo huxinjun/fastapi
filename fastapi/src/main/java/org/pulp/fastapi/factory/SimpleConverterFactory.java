@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.model.Str;
@@ -51,6 +52,7 @@ public class SimpleConverterFactory extends Converter.Factory {
         List<InterpreterParseBefore> beforeParser;
         List<InterpreterParseError> errorParser;
         List<InterpreterParserCustom> customParser;
+        List<InterpreterParserAfter> afterParser;
 
         ResponseInfo() {
         }
@@ -68,6 +70,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                     ", beforeParser=" + beforeParser +
                     ", errorParser=" + errorParser +
                     ", customParser=" + customParser +
+                    ", afterParser=" + afterParser +
                     '}';
         }
     }
@@ -149,6 +152,15 @@ public class SimpleConverterFactory extends Converter.Factory {
                                     info.customParser.add((InterpreterParserCustom) o);
                             }
                             break;
+                        case InterpreterParserAfter.HEADER_FLAG:
+                            info.afterParser = new ArrayList<>();
+                            String[] classNamesAfter = v.split(":");
+                            for (String className : classNamesAfter) {
+                                Object o = Class.forName(className).newInstance();
+                                if (o instanceof InterpreterParserAfter)
+                                    info.afterParser.add((InterpreterParserAfter) o);
+                            }
+                            break;
                     }
                 } catch (IllegalAccessException e) {
                     throw new IOException(e);
@@ -183,6 +195,13 @@ public class SimpleConverterFactory extends Converter.Factory {
             if (info.customParser == null)
                 info.customParser = new ArrayList<>();
             info.customParser.add(interpreterParserCustom);
+        }
+
+        InterpreterParserAfter interpreterParserAfter = Bridge.getSetting().onAfterParse();
+        if (interpreterParserAfter != null) {
+            if (info.afterParser == null)
+                info.afterParser = new ArrayList<>();
+            info.afterParser.add(interpreterParserAfter);
         }
 
         Log.out("getResponseContent.before json:" + string);
@@ -278,6 +297,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                 }, responseInfo.customParser, jsonStr);
 
                 if (customParseData != null) {
+                    callAfterParse(responseInfo.afterParser, customParseData);
                     customParseData.setCache(responseInfo.isCache);
                     return customParseData;
                 }
@@ -302,8 +322,22 @@ public class SimpleConverterFactory extends Converter.Factory {
             if (data != null) {
                 data.setCache(cacheResponse);
             }
+
+            callAfterParse(responseInfo.afterParser, data);
+
             return data;
         }
+    }
+
+
+    private void callAfterParse(List<InterpreterParserAfter> afterParser, Object data) {
+        if (afterParser != null)
+            for (InterpreterParserAfter after : afterParser)
+                try {
+                    //noinspection unchecked
+                    after.onParseCompleted(data);
+                } catch (ClassCastException ignore) {
+                }
     }
 
 
