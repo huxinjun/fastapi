@@ -9,10 +9,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.jetbrains.annotations.NotNull;
-import org.pulp.fastapi.Get;
-import org.pulp.fastapi.i.Parser;
+import org.pulp.fastapi.Bridge;
+import org.pulp.fastapi.i.InterpreterParseBefore;
+import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.model.Str;
+import org.pulp.fastapi.util.ChainUtil;
 import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 import org.pulp.fastapi.model.Error;
@@ -20,6 +23,8 @@ import org.pulp.fastapi.model.Error;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -44,7 +49,9 @@ public class SimpleConverterFactory extends Converter.Factory {
     private class ResponseInfo {
         boolean isCache;
         String json;
-        String dataParserClass;
+        List<InterpreterParseBefore> beforeParser;
+        List<InterpreterParseError> errorParser;
+        List<InterpreterParserCustom> customParser;
 
         ResponseInfo() {
         }
@@ -54,13 +61,14 @@ public class SimpleConverterFactory extends Converter.Factory {
             this.json = json;
         }
 
-        @NotNull
         @Override
         public String toString() {
             return "ResponseInfo{" +
                     "isCache=" + isCache +
                     ", json='" + json + '\'' +
-                    ", dataParserClass='" + dataParserClass + '\'' +
+                    ", beforeParser=" + beforeParser +
+                    ", errorParser=" + errorParser +
+                    ", customParser=" + customParser +
                     '}';
         }
     }
@@ -111,18 +119,51 @@ public class SimpleConverterFactory extends Converter.Factory {
             if (param.length == 2) {
                 String k = param[0].trim();
                 String v = param[1].trim();
-                switch (k) {
-                    case "Cache":
-                        info.isCache = Boolean.parseBoolean(v);
-                        break;
-                    case "DataParser":
-                        info.dataParserClass = v;
-                        break;
+                try {
+                    switch (k) {
+                        case "Cache":
+                            info.isCache = Boolean.parseBoolean(v);
+                            break;
+                        case InterpreterParseBefore.HEADER_FLAG:
+                            info.beforeParser = new ArrayList<>();
+                            String[] classNamesBefore = v.split(":");
+                            for (String className : classNamesBefore) {
+                                Object o = Class.forName(className).newInstance();
+                                if (o instanceof InterpreterParseBefore)
+                                    info.beforeParser.add((InterpreterParseBefore) o);
+                            }
+                            break;
+                        case InterpreterParseError.HEADER_FLAG:
+                            info.errorParser = new ArrayList<>();
+                            String[] classNamesError = v.split(":");
+                            for (String className : classNamesError) {
+                                Object o = Class.forName(className).newInstance();
+                                if (o instanceof InterpreterParseError)
+                                    info.errorParser.add((InterpreterParseError) o);
+                            }
+                            break;
+                        case InterpreterParserCustom.HEADER_FLAG:
+                            info.customParser = new ArrayList<>();
+                            String[] classNamesCustom = v.split(":");
+                            for (String className : classNamesCustom) {
+                                Object o = Class.forName(className).newInstance();
+                                if (o instanceof InterpreterParserCustom)
+                                    info.customParser.add((InterpreterParserCustom) o);
+                            }
+                            break;
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new IOException(e);
+                } catch (InstantiationException e) {
+                    throw new IOException(e);
+                } catch (ClassNotFoundException e) {
+                    throw new IOException(e);
                 }
             }
         }
         info.json = split[split.length - 1];
 
+        ULog.out("getResponseContent.before json:" + string);
         ULog.out("getResponseContent:" + info);
         return info;
     }
@@ -161,36 +202,59 @@ public class SimpleConverterFactory extends Converter.Factory {
             if (TextUtils.isEmpty(jsonStr))
                 return null;
 
-            Parser mParser = Get.getParser();
-            String dataParserClass = responseInfo.dataParserClass;
-            try {
-                if (!TextUtils.isEmpty(dataParserClass))
-                    mParser = (Parser) Class.forName(dataParserClass).newInstance();
-            } catch (Exception e) {
-                CommonUtil.throwError(Error.ERR_PARSE_CLASS, "can't instantiated custom Parser:" + dataParserClass);
+
+            if (responseInfo.errorParser != null && responseInfo.errorParser.size() > 0) {
+
+                Error error = ChainUtil.doChain(false, (ChainUtil.Invoker<Error, InterpreterParseError, String>) (obj, arg) -> {
+                    try {
+                        return obj.onParseError(arg);
+                    } catch (Exception e) {
+                        CommonUtil.throwError(Error.ERR_PARSE_ERROR, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
+                    }
+                    return null;
+                }, responseInfo.errorParser, null);
+
+                if (error != null)
+                    CommonUtil.throwError(error);
+
+
             }
 
-            if (mParser != null) {
-                try {
-
-                    Error error = mParser.onParseError(jsonStr);
-                    if (error != null)
-                        CommonUtil.throwError(error);
-                    String afterJsonStr = mParser.onBeforeParse(jsonStr);
-                    if (!TextUtils.isEmpty(afterJsonStr))
-                        jsonStr = afterJsonStr;
-
-                    //user parse data
-                    @SuppressWarnings("unchecked")
-                    T parse = (T) mParser.onCustomParse(jsonStr);
-                    if (parse != null) {
-                        parse.setCache(responseInfo.isCache);
-                        return parse;
+            if (responseInfo.beforeParser != null && responseInfo.beforeParser.size() > 0) {
+                jsonStr = ChainUtil.doChain(true, (obj, arg) -> {
+                    try {
+                        String ret = obj.onBeforeParse(arg);
+                        if (TextUtils.isEmpty(ret))
+                            return null;
+                        return ret;
+                    } catch (Exception e) {
+                        CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParseBefore.onBeforeParse,class is" + obj.getClass().getName());
                     }
-                } catch (Exception e) {
-                    CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "custom parse error:msg is" + e.getMessage()
-                            + ",parse class is" + responseInfo.dataParserClass);
+                    return null;
+
+                }, responseInfo.beforeParser, jsonStr);
+
+            }
+
+
+            if (responseInfo.customParser != null && responseInfo.customParser.size() > 0) {
+                T customParseData = ChainUtil.doChain(false, (obj, arg) -> {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        T ret = (T) obj.onCustomParse(arg);
+                        return ret;
+                    } catch (Exception e) {
+                        CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParserCustom.onCustomParse,class is" + obj.getClass().getName());
+                    }
+                    return null;
+
+                }, responseInfo.customParser, jsonStr);
+
+                if (customParseData != null) {
+                    customParseData.setCache(responseInfo.isCache);
+                    return customParseData;
                 }
+
             }
 
             //frame work parse data

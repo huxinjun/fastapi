@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 
 import io.reactivex.Observable;
 import okhttp3.CacheControl;
+import retrofit2.Retrofit;
 
 /**
  * 为SimpleObservable提供分页功能
@@ -17,8 +18,8 @@ import okhttp3.CacheControl;
  */
 public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> {
 
-    SimpleListObservable(Observable<T> upstream, Type observableType, Annotation[] annotations) {
-        super(upstream, observableType, annotations);
+    SimpleListObservable(Observable<T> upstream, Type observableType, Annotation[] annotations, Retrofit retrofit, Class<?> apiClass) {
+        super(upstream, observableType, annotations, retrofit, apiClass);
     }
 
 

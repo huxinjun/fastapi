@@ -1,4 +1,4 @@
-package org.pulp.fastapi;
+package org.pulp.fastapi.i;
 
 /**
  * 支持的缓存策略

@@ -11,6 +11,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 import io.reactivex.Observable;
+import retrofit2.Retrofit;
 
 /**
  * 单接口多url顺序请求,直到成功为止
@@ -31,8 +32,8 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     private Unreachable unreachableCallback;//url无法访问回调
     private Faild faild;
 
-    SequenceObservable(Observable<T> upstream, Type observableType, Annotation[] annotations) {
-        super(upstream, observableType, annotations);
+    SequenceObservable(Observable<T> upstream, Type observableType, Annotation[] annotations, Retrofit retrofit, Class<?> apiClass) {
+        super(upstream, observableType, annotations, retrofit, apiClass);
     }
 
     @Override

@@ -7,28 +7,32 @@ import android.text.TextUtils;
 
 import com.zhy.http.okhttp.https.HttpsUtils;
 
+import org.pulp.fastapi.anno.BaseUrl;
 import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.factory.SimpleCallAdapterFactory;
 import org.pulp.fastapi.factory.SimpleCallFactory;
 import org.pulp.fastapi.factory.SimpleConverterFactory;
-import org.pulp.fastapi.i.Parser;
-import org.pulp.fastapi.i.PathConverter;
+import org.pulp.fastapi.i.InterpreterParseBefore;
+import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.life.DestoryHelper;
 import org.pulp.fastapi.life.DestoryWatcher;
 import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.util.ChainUtil;
 import org.pulp.fastapi.util.CommonUtil;
 import org.pulp.fastapi.util.ULog;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
-import androidx.annotation.Nullable;
-import io.reactivex.annotations.NonNull;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
@@ -37,6 +41,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.CallAdapter;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
@@ -49,30 +54,15 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  */
 public class ApiClient {
 
-    private Context applicationContext;
     private static ApiClient client;
-    private Retrofit retrofit;
+    private Setting setting;
+    private OkHttpClient okHttpClient;
+    private Map<String, Retrofit> retrofitMap = new HashMap<>();
     private Cache cache;
-    private String cacheDir;//缓存目路
+    private ReentrantLock lock = new ReentrantLock();
 
-    private PathConverter pathConverter;
-    private Parser dataParser;
-
-
-    private Map<String, String> commonParams;
-
-    public static void init(@NonNull Context context,
-                            @NonNull String cachePath,
-                            @Nullable PathConverter globlePathConverter,
-                            @Nullable Parser globleParser,
-                            @Nullable Map<String, String> commonParams
-
-    ) {
-        getClient().applicationContext = context instanceof Activity ? context.getApplicationContext() : context;
-        getClient().cacheDir = cachePath;
-        getClient().pathConverter = globlePathConverter;
-        getClient().dataParser = globleParser;
-        getClient().commonParams = commonParams;
+    public static void init(Setting setting) {
+        getClient().setting = setting;
         getClient().init();
     }
 
@@ -85,9 +75,9 @@ public class ApiClient {
      * @return api接口类生成的一个Observable实例
      */
     public static <T> T getApi(DestoryWatcher destoryWatcher, Class<T> apiclass) {
-        if (getClient().applicationContext == null)
+        if (getClient().setting == null)
             throw new RuntimeException("not init,please invoke init method");
-        return getClient().createProxyApi(destoryWatcher, apiclass, getClient().retrofit.create(apiclass));
+        return getClient().createProxyApi(destoryWatcher, apiclass);
     }
 
 
@@ -96,9 +86,9 @@ public class ApiClient {
      * !!!!!!!!!!!!!此方法只适用于获取固定url,configurl,其他的api请求请传递DestoryWatcher对象
      */
     public static <T> T getApi(Class<T> apiclass) {
-        if (getClient().applicationContext == null)
+        if (getClient().setting == null)
             throw new RuntimeException("not init,please invoke init method");
-        return getClient().createProxyApi(null, apiclass, getClient().retrofit.create(apiclass));
+        return getClient().createProxyApi(null, apiclass);
     }
 
 
@@ -110,22 +100,15 @@ public class ApiClient {
      * 初始化OkHttpClient,Retrofit,HttpLog
      */
     private void init() {
-        File cacheFile = new File(cacheDir, "CacheFile");//这里为了方便直接把文件放在了SD卡根目录的HttpCache中，一般放在context.getCacheDir()中
-//        try {
-//            ULog.out("initcache=" + cacheDir);
-//            File cacheDirFile = new File(cacheDir);
-//            boolean b = cacheDirFile.mkdir();
-//            ULog.out("initcache dir:" + b);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            ULog.out("initcache:" + e.getMessage());
-//        }
-        int cacheSize = 10 * 1024 * 1024;//设置缓存文件大小为10M
-        cache = new Cache(cacheFile, cacheSize);
+        HttpLoggingInterceptor.Logger logger = setting.onCustomLogger() == null ? HttpLoggingInterceptor.Logger.DEFAULT : setting.onCustomLogger();
         //声明日志类
-        HttpLoggingInterceptor logInterceptor = new HttpLoggingInterceptor();
+        HttpLoggingInterceptor logInterceptor = new HttpLoggingInterceptor(logger);
         //设定日志级别
-        logInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        HttpLoggingInterceptor.Level level = setting.onCustomLoggerLevel();
+        level = level != null ? level : HttpLoggingInterceptor.Level.BODY;
+        logInterceptor.setLevel(level);
+
+        cache = new Cache(new File(setting.onGetCacheDir(), "CacheFile"), setting.onGetCacheSize());
 
         HttpsUtils.SSLParams sslParams = HttpsUtils.getSslSocketFactory(null, null, null);
         OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder()
@@ -135,24 +118,16 @@ public class ApiClient {
                 .addInterceptor(INTERCEPTOR_NONET_CACHE_CONTROL)
                 .addInterceptor(INTERCEPTOR_PARSER_SUPPORT)
                 .cache(cache)
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS);
+                .connectTimeout(setting.onGetConnectTimeout(), TimeUnit.MILLISECONDS)
+                .readTimeout(setting.onGetReadTimeout(), TimeUnit.MILLISECONDS);
 
-        OkHttpClient okHttpClient = okHttpBuilder.build();
-
-        retrofit = new Retrofit.Builder()
-                .baseUrl("http://fastapi.org")//不写会报错，动态域会被 @Url 替换
-                .callFactory(SimpleCallFactory.getInstance(okHttpClient))
-                .addConverterFactory(SimpleConverterFactory.create())
-                .addCallAdapterFactory(SimpleCallAdapterFactory.create())//支持SimpleObservable
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())//支持rxjava
-                .build();
+        okHttpClient = okHttpBuilder.build();
     }
 
     private static Interceptor INTERCEPTOR_NONET_CACHE_CONTROL = chain -> {
         Request request = chain.request();
         CacheControl cacheControl = request.cacheControl();
-        if (!CommonUtil.isConnected(getClient().applicationContext)) {
+        if (!CommonUtil.isConnected(getClient().setting.onGetApplicationContext())) {
             if (!cacheControl.noCache())
                 request = request.newBuilder()
                         .cacheControl(CacheControl.FORCE_CACHE)//只访问缓存
@@ -163,10 +138,16 @@ public class ApiClient {
 
     private static Interceptor INTERCEPTOR_PARSER_SUPPORT = chain -> {
         Request request = chain.request();
-        String extra_anno_dataparser = request.header("DataParser");
+        String extra_anno_parser_before = request.header(InterpreterParseBefore.HEADER_FLAG);
+        String extra_anno_parser_error = request.header(InterpreterParseError.HEADER_FLAG);
+        String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
         Response response = chain.proceed(request);
-        if (!TextUtils.isEmpty(extra_anno_dataparser))
-            response = setExtraTag(response, "DataParser", extra_anno_dataparser);
+        if (!TextUtils.isEmpty(extra_anno_parser_before))
+            response = setExtraTag(response, InterpreterParseBefore.HEADER_FLAG, extra_anno_parser_before);
+        if (!TextUtils.isEmpty(extra_anno_parser_error))
+            response = setExtraTag(response, InterpreterParseError.HEADER_FLAG, extra_anno_parser_error);
+        if (!TextUtils.isEmpty(extra_anno_parser_custom))
+            response = setExtraTag(response, InterpreterParserCustom.HEADER_FLAG, extra_anno_parser_custom);
         return response;
     };
 
@@ -178,20 +159,52 @@ public class ApiClient {
         return chain.proceed(request);
     };
 
+
     /**
      *
      */
     @SuppressWarnings("unchecked")
-    private <T> T createProxyApi(DestoryWatcher destoryWatcher, Class<T> apiClass, T retrofitApi) {
+    private <T> T createProxyApi(DestoryWatcher destoryWatcher, Class<T> apiClass) {
         return (T) Proxy.newProxyInstance(apiClass.getClassLoader(), new Class<?>[]{apiClass},
                 (proxy, method, args) -> {
-                    Object invoke = method.invoke(retrofitApi, args);
+
+                    //防止多个线程同时请求接口,改变了SimpleCallAdapterFactory中对apiClass的引用
+                    lock.tryLock();
+
+                    List<String> baseUrls = findBaseUrls(apiClass, method);
+                    String baseUrl = ChainUtil.doChain(false, (obj) -> {
+                        if (TextUtils.isEmpty(obj))
+                            return null;
+                        return obj;
+                    }, baseUrls);
+
+                    Retrofit retrofit = retrofitMap.get(baseUrl);
+                    if (retrofit == null) {
+                        retrofit = new Retrofit.Builder()
+                                .baseUrl(baseUrl)//不写会报错，动态域会被 @Url 替换
+                                .callFactory(SimpleCallFactory.getInstance(okHttpClient))
+                                .addConverterFactory(SimpleConverterFactory.create())
+                                .addCallAdapterFactory(SimpleCallAdapterFactory.create())//支持SimpleObservable
+                                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())//支持rxjava
+                                .build();
+                        retrofitMap.put(baseUrl, retrofit);
+                    }
+
+                    List<CallAdapter.Factory> factories = retrofit.callAdapterFactories();
+                    for (CallAdapter.Factory f : factories) {
+                        if (f instanceof SimpleCallAdapterFactory)
+                            ((SimpleCallAdapterFactory) f).setApiClass(apiClass);
+                    }
+
+                    Object invoke = method.invoke(retrofit.create(apiClass), args);
                     ULog.out("createProxyApi.invoke=" + invoke);
                     if (invoke instanceof SimpleObservable) {
                         SimpleObservable simpleObservable = (SimpleObservable) invoke;
                         if (destoryWatcher != null)
                             DestoryHelper.add(destoryWatcher, simpleObservable);
                     }
+
+                    lock.unlock();
                     return invoke;
                 });
     }
@@ -230,8 +243,27 @@ public class ApiClient {
     }
 
 
+    private List<String> findBaseUrls(Class apiClass, Method apiMethod) {
+        List<String> ret = new ArrayList<>();
+        BaseUrl baseUrlMethodAnno = apiMethod.getAnnotation(BaseUrl.class);
+        if (baseUrlMethodAnno != null)
+            ret.add(baseUrlMethodAnno.value());
+
+        BaseUrl baseUrlClassAnno = (BaseUrl) apiClass.getAnnotation(BaseUrl.class);
+        if (baseUrlClassAnno != null)
+            ret.add(baseUrlClassAnno.value());
+
+        if (!TextUtils.isEmpty(setting.onGetBaseUrl()))
+            ret.add(setting.onGetBaseUrl());
+
+
+        return ret;
+    }
+
+
     Context getApplicationContext() {
-        return getClient().applicationContext;
+        Context context = getClient().setting.onGetApplicationContext();
+        return context instanceof Activity ? context.getApplicationContext() : context;
     }
 
     static ApiClient getClient() {
@@ -241,23 +273,12 @@ public class ApiClient {
         return client;
     }
 
+    Setting getSetting() {
+        return setting;
+    }
+
+
     Cache getCache() {
-        return getClient().cache;
-    }
-
-    Retrofit getRetrofit() {
-        return getClient().retrofit;
-    }
-
-    PathConverter getPathConverter() {
-        return getClient().pathConverter;
-    }
-
-    Parser getDataParser() {
-        return dataParser;
-    }
-
-    Map<String, String> getCommonParams() {
-        return commonParams;
+        return cache;
     }
 }

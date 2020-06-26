@@ -1,0 +1,67 @@
+package org.pulp.fastapi;
+
+import android.content.Context;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import org.pulp.fastapi.i.InterpreterParserCustom;
+import org.pulp.fastapi.i.InterpreterParseBefore;
+import org.pulp.fastapi.i.InterpreterParseError;
+import org.pulp.fastapi.i.PathConverter;
+
+import java.util.Map;
+
+import okhttp3.logging.HttpLoggingInterceptor;
+
+public interface Setting {
+
+
+    @NonNull
+    Context onGetApplicationContext();
+
+    @NonNull
+    String onGetCacheDir();
+
+    long onGetCacheSize();
+
+    @NonNull
+    String onGetBaseUrl();
+
+
+    @Nullable
+    PathConverter onGetPathConverter();
+
+    @Nullable
+    InterpreterParserCustom onCustomParse();
+
+    @Nullable
+    InterpreterParseBefore onBeforeParse();
+
+    @Nullable
+    InterpreterParseError onErrorParse();
+
+    @Nullable
+    Map<String, String> onGetCommonParams();
+
+
+    @Nullable
+    HttpLoggingInterceptor.Logger onCustomLogger();
+
+    @Nullable
+    HttpLoggingInterceptor.Level onCustomLoggerLevel();
+
+    /**
+     * unit millisecond
+     *
+     * @return ConnectTimeout
+     */
+    int onGetConnectTimeout();
+
+    /**
+     * unit millisecond
+     *
+     * @return ReadTimeout
+     */
+    int onGetReadTimeout();
+}

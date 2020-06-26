@@ -1,9 +1,10 @@
 package cn.aichang.blackbeauty.base.net.api
 
-import org.pulp.fastapi.CachePolicy.*
+import org.pulp.fastapi.anno.BaseUrl
+import org.pulp.fastapi.i.CachePolicy.*
 import org.pulp.fastapi.anno.Cache
-import org.pulp.fastapi.anno.DataParser
 import org.pulp.fastapi.anno.MultiPath
+import org.pulp.fastapi.anno.OnCustomParse
 import org.pulp.fastapi.extension.SequenceObservable
 import org.pulp.fastapi.extension.SimpleObservable
 import org.pulp.fastapi.model.Str
@@ -16,7 +17,7 @@ import java.net.URL
 interface TestAPI {
 
     @GET("getConfig")
-    @DataParser(UrlKeyParser::class)
+    @OnCustomParse(UrlKeyParser::class)
     @MultiPath(
             "https://alapi.mengliaoba.cn/apiv5/getconfig.php",
             "http://123.56.221.219:8280/apiv5/getconfig.php",
@@ -30,6 +31,7 @@ interface TestAPI {
     @GET(UrlKey.COMMON_FLASHSCREEN)
     fun getStaticUrlConvertPath(@Query("tag") tag: String): URL
 
+    @BaseUrl("http://www.xzbenben.cn")
     @GET("/AccountBook/account")
     fun getStaticUrlNoConvertPath(@Query("tag") tag: String): URL
 

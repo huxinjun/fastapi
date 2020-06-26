@@ -16,9 +16,10 @@ class Error {
         const val ERR_NO_MORE_DATA = -9998
         const val ERR_NO_NET = -9997
         const val ERR_PARSE_CLASS = -9996
-        const val ERR_PARSE_BEAN = -9995
-        const val ERR_PARSE_CUSTOM = -9994
-        const val ERR_ALL_URLS_INVALID = -9994
+        const val ERR_PARSE_ERROR = -9995
+        const val ERR_PARSE_BEAN = -9994
+        const val ERR_PARSE_CUSTOM = -9993
+        const val ERR_ALL_URLS_INVALID = -9992
 
 
         var SYMBOL: String = "ERROR_SYMBOL"

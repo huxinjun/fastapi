@@ -4,23 +4,14 @@ import android.text.TextUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.pulp.fastapi.i.Parser;
+import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.ULog;
 
 import java.util.Iterator;
 
 
-public class UrlKeyParser implements Parser<UrlKey> {
-    @Override
-    public String onBeforeParse(String json) {
-        return null;
-    }
-
-    @Override
-    public Error onParseError(String json) {
-        return null;
-    }
+public class UrlKeyParser implements InterpreterParserCustom<UrlKey> {
 
     @Override
     public UrlKey onCustomParse(String json) {

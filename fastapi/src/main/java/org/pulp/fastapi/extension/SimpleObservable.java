@@ -5,8 +5,8 @@ import android.text.TextUtils;
 import android.widget.Toast;
 
 
-import org.pulp.fastapi.CachePolicy;
-import org.pulp.fastapi.Get;
+import org.pulp.fastapi.i.CachePolicy;
+import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.factory.SimpleCallFactory;
 import org.pulp.fastapi.life.DestoryWatcher;
 import org.pulp.fastapi.model.Error;
@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import androidx.annotation.NonNull;
+
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
@@ -111,11 +112,15 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private String path;//与之关联的path
     private AtomicReference<Disposable> atomicReference = new AtomicReference<>();
     private SimpleObserver<T> simpleObserver = new SimpleObserver<>();
+    private Retrofit retrofit;
+    private Class<?> apiClass;
 
-    SimpleObservable(Observable<T> upstream, Type observableType, Annotation[] annotations) {
+    SimpleObservable(Observable<T> upstream, Type observableType, Annotation[] annotations, Retrofit retrofit, Class<?> apiClass) {
         this.upstream = upstream;
         this.observableType = observableType;
         this.annotations = annotations;
+        this.retrofit = retrofit;
+        this.apiClass = apiClass;
     }
 
     class InternalObserver implements Observer<T> {
@@ -160,7 +165,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 error = Error.Companion.str2err(message);
             } else {
                 error = new Error();
-                if (!CommonUtil.isConnected(Get.getContext())) {
+                if (!CommonUtil.isConnected(Bridge.getContext())) {
                     error.setCode(Error.ERR_NO_NET);
                     error.setMsg("no network");
                 } else {
@@ -175,7 +180,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 faild.onFaild(error);
             assert error != null;
             if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
-                Toast.makeText(Get.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
+                Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
             if (observer != null)
                 observer.onError(e);
             e.printStackTrace();
@@ -249,10 +254,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
             boolean forceCache = !TextUtils.isEmpty(header) && header.toLowerCase().contains("all");
-            if (Get.getCache() != null && forceCache) {
-                Field internalCacheField = Get.getCache().getClass().getDeclaredField("internalCache");
+            if (Bridge.getCache() != null && forceCache) {
+                Field internalCacheField = Bridge.getCache().getClass().getDeclaredField("internalCache");
                 internalCacheField.setAccessible(true);
-                InternalCache internalCache = (InternalCache) internalCacheField.get(Get.getCache());
+                InternalCache internalCache = (InternalCache) internalCacheField.get(Bridge.getCache());
                 Response response = internalCache.get(newBuilder.build());
                 ULog.out("cacheUseAllSupport.cache response=" + response);
 
@@ -275,7 +280,6 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                     }
                 }
 
-                Retrofit retrofit = Get.getRetrofit();
                 Converter<ResponseBody, Object> bodyConverter = retrofit.responseBodyConverter(observableType, annotations);
                 if (bodyConverter == null) {
                     ULog.out("cacheUseAllSupport.bodyConverter is null!!!");

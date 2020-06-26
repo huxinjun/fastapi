@@ -38,6 +38,9 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  */
 public class SimpleCallAdapterFactory extends CallAdapter.Factory {
 
+
+    private Class<?> apiClass;
+
     public static SimpleCallAdapterFactory create() {
         return new SimpleCallAdapterFactory();
     }
@@ -72,7 +75,7 @@ public class SimpleCallAdapterFactory extends CallAdapter.Factory {
                 observableType = returnType;
             }
             CallAdapter<?, ?> callAdapter = rxCallAdapterFactory.get(genericSuperclass, annotations, retrofit);
-            return new SimpleCallAdapter(callAdapter, observableType, rawType, annotations);
+            return new SimpleCallAdapter(callAdapter, observableType, rawType, annotations, retrofit, apiClass);
         }
         return null;
     }
@@ -87,5 +90,10 @@ public class SimpleCallAdapterFactory extends CallAdapter.Factory {
             if (factory instanceof RxJava2CallAdapterFactory)
                 return (RxJava2CallAdapterFactory) factory;
         return null;
+    }
+
+
+    public void setApiClass(Class<?> apiClass) {
+        this.apiClass = apiClass;
     }
 }
