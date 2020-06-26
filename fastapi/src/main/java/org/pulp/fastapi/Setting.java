@@ -33,7 +33,7 @@ public interface Setting {
     PathConverter onGetPathConverter();
 
     @Nullable
-    InterpreterParserCustom onCustomParse();
+    <T> InterpreterParserCustom<T> onCustomParse(Class<T> dataClass);
 
     @Nullable
     InterpreterParseBefore onBeforeParse();

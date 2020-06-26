@@ -5,8 +5,7 @@ import android.text.TextUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.pulp.fastapi.i.InterpreterParserCustom;
-import org.pulp.fastapi.model.Error;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.util.Iterator;
 
@@ -37,7 +36,7 @@ public class UrlKeyParser implements InterpreterParserCustom<UrlKey> {
 
                 }
             }
-            ULog.out("parseUrlKey.downloadUrls =" + UrlKey.downloadUrls);
+            Log.out("parseUrlKey.downloadUrls =" + UrlKey.downloadUrls);
             return null;
         } catch (JSONException e) {
             e.printStackTrace();

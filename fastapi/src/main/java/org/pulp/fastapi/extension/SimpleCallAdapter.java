@@ -19,7 +19,7 @@ import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.i.PathConverter;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.CommonUtil;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 import org.pulp.fastapi.util.UrlUtil;
 
 import java.lang.annotation.Annotation;
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -61,6 +62,9 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
     private PathConverter annoPathConverter;
     private Retrofit retrofit;
     private Class<?> apiClass;
+    private List<Class<?>> parserBeforeClasses;
+    private List<Class<?>> parserErrorClasses;
+    private List<Class<?>> parserCustomClasses;
 
     public SimpleCallAdapter(CallAdapter<R, Object> realCallApdater, Type observableType
             , Class<?> rawType, @NonNull Annotation[] annotations, @NonNull Retrofit retrofit, Class<?> apiClass) {
@@ -77,6 +81,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
         return observableType;
     }
 
+
     @Override
     @SuppressWarnings("unchecked")
     public Object adapt(@NonNull Call<R> call) {
@@ -86,7 +91,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
         try {
             AtomicReference<String> staticUrl = new AtomicReference<>();
             String path = findPath();
-            ULog.out("find path from method annotation:" + path);
+            Log.out("find path from method annotation:" + path);
             if (path == null)
                 return adapt;
             if (TextUtils.isEmpty(path))
@@ -112,6 +117,9 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                 IOObservable.setListener(simpleObservable);
 
                 Map<String, String> annoParams = new LinkedHashMap<>();
+                parseOnBeforeParseAnno(findAnnoByClass(annotations, OnBeforeParse.class));
+                parseOnErrorParseAnno(findAnnoByClass(annotations, OnErrorParse.class));
+                parseOnCustomParseAnno(findAnnoByClass(annotations, OnCustomParse.class));
                 if (annotations != null && annotations.length > 0) {
                     for (Annotation annotation : annotations) {
                         if (annotation instanceof PAGE) {
@@ -126,12 +134,6 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                                 annoParams.putAll(paramsMap);
                         } else if (annotation instanceof MultiPath) {
                             parseMultiPathAnno((MultiPath) annotation, simpleObservable);
-                        } else if (annotation instanceof OnBeforeParse) {
-                            parseOnBeforeParseAnno((OnBeforeParse) annotation);
-                        } else if (annotation instanceof OnErrorParse) {
-                            parseOnErrorParseAnno((OnErrorParse) annotation);
-                        } else if (annotation instanceof OnCustomParse) {
-                            parseOnCustomParseAnno((OnCustomParse) annotation);
                         } else if (annotation instanceof PathParser) {
                             parsePathParserAnno((PathParser) annotation);
                         } else if (annotation instanceof Cache) {
@@ -139,6 +141,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         }
                     }
                 }
+
 
                 if (simpleObservable == null)
                     return adapt;
@@ -189,7 +192,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         }
                     }
 
-                    ULog.out("before url:" + convertUrl);
+                    Log.out("before url:" + convertUrl);
 
                     // 开始根据不同请求方式构建新Request 并返回
                     if (!isPostMethod) {
@@ -202,7 +205,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         } else
                             convertUrl = UrlUtil.map2url(request.url().toString(), params);
 
-                        ULog.out("after url:" + convertUrl);
+                        Log.out("after url:" + convertUrl);
                         requestBuilder.url(convertUrl);
                     } else {
                         //POST
@@ -271,7 +274,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
     private void parseMultiPathAnno(MultiPath anno, SimpleObservable<?> simpleObservable) {
         String[] value = anno.value();
-        ULog.out("parseMultiPathAnno.value=" + Arrays.toString(value));
+        Log.out("parseMultiPathAnno.value=" + Arrays.toString(value));
         if (simpleObservable instanceof SequenceObservable) {
             SequenceObservable sequenceObservable = (SequenceObservable) simpleObservable;
             sequenceObservable.setPaths(value);
@@ -282,7 +285,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
     @SuppressWarnings("unchecked")
     private void parsePageAnno(PAGE pageAnno, SimpleObservable<?> simpleObservable) {
         Class<? extends PageCondition> value = pageAnno.value();
-        ULog.out("adapt.PAGE.value=:" + value);
+        Log.out("adapt.PAGE.value=:" + value);
         try {
             PageCondition pageCondition = value.newInstance();
             ((SimpleListObservable) simpleObservable).pageCondition(pageCondition);
@@ -330,7 +333,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
     private void parsePathParserAnno(PathParser anno) {
         Class<? extends PathConverter> value = anno.value();
-        ULog.out("parsePathParserAnno.value=" + value);
+        Log.out("parsePathParserAnno.value=" + value);
         try {
             this.annoPathConverter = value.newInstance();
         } catch (IllegalAccessException e) {
@@ -340,73 +343,61 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
         }
     }
 
-    private List<Class<?>> parserBeforeClasses;
-    private List<Class<?>> parserErrorClasses;
-    private List<Class<?>> parserCustomClasses;
 
-    private void parseOnBeforeParseAnno(OnBeforeParse anno) {
+    private void parseOnBeforeParseAnno(@Nullable OnBeforeParse anno) {
 
         parserBeforeClasses = new ArrayList<>();
 
-        Class<? extends InterpreterParseBefore> methodParser = anno.value();
-        ULog.out("parseOnBeforeParseAnno.methodParser=" + methodParser);
-        parserBeforeClasses.add(methodParser);
+        if (anno != null) {
+            Class<? extends InterpreterParseBefore> methodParser = anno.value();
+            Log.out("parseOnBeforeParseAnno.methodParser=" + methodParser);
+            parserBeforeClasses.add(methodParser);
+        }
 
         OnBeforeParse classParser = apiClass.getAnnotation(OnBeforeParse.class);
         if (classParser != null) {
-            ULog.out("parseOnBeforeParseAnno.classParser=" + methodParser);
+            Log.out("parseOnBeforeParseAnno.classParser=" + classParser);
             parserBeforeClasses.add(classParser.value());
-        }
-        InterpreterParseBefore interpreterParseBefore = Bridge.getSetting().onBeforeParse();
-        if (interpreterParseBefore != null) {
-            ULog.out("parseOnBeforeParseAnno.globalParser=" + methodParser);
-            parserBeforeClasses.add(interpreterParseBefore.getClass());
         }
     }
 
-    private void parseOnErrorParseAnno(OnErrorParse anno) {
+    private void parseOnErrorParseAnno(@Nullable OnErrorParse anno) {
 
         parserErrorClasses = new ArrayList<>();
 
-        Class<? extends InterpreterParseError> methodParser = anno.value();
-        ULog.out("parseOnErrorParseAnno.methodParser=" + methodParser);
-        parserErrorClasses.add(methodParser);
+        if (anno != null) {
+            Class<? extends InterpreterParseError> methodParser = anno.value();
+            Log.out("parseOnErrorParseAnno.methodParser=" + methodParser);
+            parserErrorClasses.add(methodParser);
+        }
 
         OnErrorParse classParser = apiClass.getAnnotation(OnErrorParse.class);
         if (classParser != null) {
-            ULog.out("parseOnErrorParseAnno.classParser=" + methodParser);
+            Log.out("parseOnErrorParseAnno.classParser=" + classParser);
             parserErrorClasses.add(classParser.value());
-        }
-        InterpreterParseError interpreterGlobal = Bridge.getSetting().onErrorParse();
-        if (interpreterGlobal != null) {
-            ULog.out("parseOnErrorParseAnno.globalParser=" + methodParser);
-            parserErrorClasses.add(interpreterGlobal.getClass());
         }
     }
 
-    private void parseOnCustomParseAnno(OnCustomParse anno) {
+    private void parseOnCustomParseAnno(@Nullable OnCustomParse anno) {
 
         parserCustomClasses = new ArrayList<>();
 
-        Class<? extends InterpreterParserCustom> methodParser = anno.value();
-        ULog.out("parseOnCustomParseAnno.methodParser=" + methodParser);
-        parserCustomClasses.add(methodParser);
+        if (anno != null) {
+            Class<? extends InterpreterParserCustom> methodParser = anno.value();
+            Log.out("parseOnCustomParseAnno.methodParser=" + methodParser);
+            parserCustomClasses.add(methodParser);
+        }
 
         OnCustomParse classParser = apiClass.getAnnotation(OnCustomParse.class);
         if (classParser != null) {
-            ULog.out("parseOnCustomParseAnno.classParser=" + methodParser);
+            Log.out("parseOnCustomParseAnno.classParser=" + classParser);
             parserCustomClasses.add(classParser.value());
-        }
-        InterpreterParserCustom interpreterGlobal = Bridge.getSetting().onCustomParse();
-        if (interpreterGlobal != null) {
-            ULog.out("parseOnCustomParseAnno.globalParser=" + methodParser);
-            parserCustomClasses.add(interpreterGlobal.getClass());
         }
     }
 
     private void parseCacheAnno(Cache anno, SimpleObservable<?> simpleObservable) {
         String value = anno.value();
-        ULog.out("parseCacheAnno.value=" + value);
+        Log.out("parseCacheAnno.value=" + value);
         if (simpleObservable != null)
             simpleObservable.cachePolicy(value);
     }
@@ -429,6 +420,17 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
     }
 
 
+    private <T> T findAnnoByClass(Annotation[] annotations, Class<T> annoClass) {
+        if (annotations == null || annotations.length == 0)
+            return null;
+        for (Annotation anno : annotations)
+            if (anno != null && anno.annotationType() == annoClass)
+                //noinspection unchecked
+                return (T) anno;
+        return null;
+    }
+
+
     /**
      * 将path转换为url
      *
@@ -448,7 +450,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
             url = pathConverter.onConvert(path);
         if (TextUtils.isEmpty(url))
             return path;
-        ULog.out("pathConvert.path=" + path + "--->url=" + url);
+        Log.out("pathConvert.path=" + path + "--->url=" + url);
         return url;
     }
 

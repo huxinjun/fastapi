@@ -6,7 +6,7 @@ import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 
 import org.jetbrains.annotations.NotNull;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +39,7 @@ public class SimpleCallFactory implements Call.Factory {
     @NotNull
     @Override
     public Call newCall(@NonNull Request request) {
-        ULog.out("RequestWatcher.create request=" + Thread.currentThread().getId());
+        Log.out("RequestWatcher.create request=" + Thread.currentThread().getId());
         //此处可截获请求前的Request
         RequestWatcher requestWatcher = requestWatcherMap.get(Thread.currentThread().getId());
         Request newRequest = request;
@@ -56,7 +56,7 @@ public class SimpleCallFactory implements Call.Factory {
 
     public void setRequestWatcher(long threadId, RequestWatcher requestWatcher) {
         requestWatcherMap.put(threadId, requestWatcher);
-        ULog.out("RequestWatcher.setWatcher=" + threadId);
+        Log.out("RequestWatcher.setWatcher=" + threadId);
     }
 
     public interface RequestWatcher {

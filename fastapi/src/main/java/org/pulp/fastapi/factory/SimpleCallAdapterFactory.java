@@ -8,7 +8,7 @@ import org.pulp.fastapi.extension.SimpleCallAdapter;
 import org.pulp.fastapi.extension.SequenceObservable;
 import org.pulp.fastapi.extension.SimpleListObservable;
 import org.pulp.fastapi.extension.SimpleObservable;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -30,9 +30,9 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * 使用方法:
  * API声明:SimpleObservable<Object> getServerData(String p1);
  * 请求方式:
- * ApiClient.getApi().getServerData("abc")
- * .success(data -> ULog.out("data:" + data))
- * .faild(error -> ULog.out("error:" + error.getStatus()));
+ * API.get().getServerData("abc")
+ * .success(data -> Log.out("data:" + data))
+ * .faild(error -> Log.out("error:" + error.getStatus()));
  * <p>
  * Created by xinjun on 2019/12/4 16:28
  */
@@ -50,7 +50,7 @@ public class SimpleCallAdapterFactory extends CallAdapter.Factory {
     @SuppressWarnings("unchecked")
     public CallAdapter<?, ?> get(@NonNull Type returnType, @NonNull Annotation[] annotations, @NonNull Retrofit retrofit) {
         Class<?> rawType = getRawType(returnType);
-        ULog.out("AichangCallAdapterFactory:rawType=" + rawType);
+        Log.out("AichangCallAdapterFactory:rawType=" + rawType);
 
         if (rawType == SimpleObservable.class
                 || rawType == SimpleListObservable.class

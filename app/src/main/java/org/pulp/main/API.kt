@@ -1,19 +1,18 @@
 package cn.aichang.blackbeauty.base.net.api
 
-import org.pulp.fastapi.anno.BaseUrl
+import org.pulp.fastapi.anno.*
 import org.pulp.fastapi.i.CachePolicy.*
-import org.pulp.fastapi.anno.Cache
-import org.pulp.fastapi.anno.MultiPath
-import org.pulp.fastapi.anno.OnCustomParse
 import org.pulp.fastapi.extension.SequenceObservable
 import org.pulp.fastapi.extension.SimpleObservable
 import org.pulp.fastapi.model.Str
-import org.pulp.main.UrlKey
-import org.pulp.main.UrlKeyParser
+import org.pulp.main.*
 import retrofit2.http.GET
 import retrofit2.http.Query
 import java.net.URL
 
+//@OnCustomParse(TestClassParserAnno::class)
+//@OnErrorParse(TestClassParserAnno::class)
+//@OnBeforeParse(TestClassParserAnno::class)
 interface TestAPI {
 
     @GET("getConfig")
@@ -35,8 +34,11 @@ interface TestAPI {
     @GET("/AccountBook/account")
     fun getStaticUrlNoConvertPath(@Query("tag") tag: String): URL
 
+    //    @OnBeforeParse(TestMethodParserAnno::class)
+//    @OnCustomParse(TestMethodParserAnno::class)
+//    @OnErrorParse(TestMethodParserAnno::class)
     @GET(UrlKey.COMMON_FLASHSCREEN)
-    fun getDataConvertPath(): SimpleObservable<Str>
+    fun getDataConvertPath(): SimpleObservable<TestModel>
 
     @GET("https://alapi.mengliaoba.cn/apiv5/common/flashscreen.php")
     fun getDataNoConvertPath(): SimpleObservable<Str>

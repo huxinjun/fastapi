@@ -2,17 +2,12 @@ package org.pulp.fastapi;
 
 import android.content.Context;
 
-import org.pulp.fastapi.i.PathConverter;
-
-import java.util.Map;
-
 import okhttp3.Cache;
-import retrofit2.Retrofit;
 
 public class Bridge {
 
-    private static ApiClient getClient() {
-        return ApiClient.getClient();
+    private static API getClient() {
+        return API.getClient();
     }
 
     public static Context getContext() {

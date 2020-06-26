@@ -6,7 +6,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 链
+ * 链调用
+ * 逐个调用接口集合中的方法
+ * 模式一:调用直到返回数据不为null
+ * 模式二:下次调用使用上次的返回值,初始时使用传入的参数,直到集合遍历完毕
  */
 public class ChainUtil {
 
@@ -22,6 +25,8 @@ public class ChainUtil {
 
     /**
      * 链式调用,适用于接口方法
+     * <p>
+     * R,A类型不同时useret必须为false
      *
      * @param useret  是否使用上一环的返回值
      * @param invoker 调用具体实现
@@ -35,10 +40,11 @@ public class ChainUtil {
     @SuppressWarnings("unchecked")
     public static <R, T, A> R doChain(boolean useret, Invoker<R, T, A> invoker, List<T> objs, A arg) {
 
-        R ret = null;
+        R ret = !useret ? null : (R) arg;
         int i = 0;
         do {
-            ret = invoker.invoke(objs.get(i), arg);
+            R ret2 = invoker.invoke(objs.get(i), arg);
+            ret = ret2 == null ? ret : ret2;
             if (!useret) {
                 if (ret != null)
                     return ret;
@@ -87,7 +93,7 @@ public class ChainUtil {
         InterpreterParseBefore i1 = new InterpreterParseBefore() {
             @Override
             public String onBeforeParse(String json) {
-                return json + "aaa";
+                return null;
             }
         };
         InterpreterParseBefore i2 = new InterpreterParseBefore() {
@@ -99,7 +105,7 @@ public class ChainUtil {
         InterpreterParseBefore i3 = new InterpreterParseBefore() {
             @Override
             public String onBeforeParse(String json) {
-                return json + "ccc";
+                return null;
             }
         };
 

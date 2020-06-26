@@ -4,7 +4,6 @@ import android.text.TextUtils;
 
 
 import org.pulp.fastapi.model.Error;
-import org.pulp.fastapi.util.ULog;
 
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;

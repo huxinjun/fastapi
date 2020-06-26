@@ -5,7 +5,7 @@ import android.text.TextUtils;
 
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -50,7 +50,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
             dispose();
         });
         super.faild(error -> {
-            ULog.out("success.faild hash=" + this.hashCode());
+            Log.out("success.faild hash=" + this.hashCode());
             if (unreachableCallback != null)
                 unreachableCallback.onUnreachable(error, getCurrPath());
             nextUrl();

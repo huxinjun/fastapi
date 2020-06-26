@@ -7,14 +7,13 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.pulp.fastapi.Setting;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.i.PathConverter;
 import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.util.Log;
 
 import java.io.File;
 import java.util.HashMap;
@@ -77,32 +76,52 @@ public class ApiSetting implements Setting {
 
     @Nullable
     @Override
-    public InterpreterParserCustom onCustomParse() {
+    public <T> InterpreterParserCustom<T> onCustomParse(Class<T> dataClass) {
+        Log.out("TestMethodParserAnno.onCustomParse");
+        if (dataClass == TestModel.class) {
+            //noinspection unchecked
+            return (InterpreterParserCustom<T>) (InterpreterParserCustom<TestModel>) json -> {
+
+                TestModel testModel = new TestModel();
+                testModel.testFrom = "global onCustomParse";
+                return testModel;
+            };
+        }
         return null;
     }
 
     @Nullable
     @Override
     public InterpreterParseBefore onBeforeParse() {
-        return new InterpreterParseBefore() {
-            @Override
-            public String onBeforeParse(String json) {
-                JSONObject jsonObject = null;
-                String jsonStr = null;
-                try {
-                    jsonObject = new JSONObject(json);
-                    //result提取剥离
-                    if (jsonObject.has("result")) {
-                        Object result = jsonObject.opt("result");
-                        if (jsonObject.length() == 1 && result instanceof JSONObject)
-                            jsonStr = result.toString();
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-        };
+//        return json -> {
+//            try {
+//                JSONObject jsonObject = new JSONObject(json);
+//                jsonObject.put("testFrom", "global onBeforeParse");
+//                return jsonObject.toString();
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//            return null;
+//        };
+        return null;
+//        return json -> {
+//            JSONObject jsonObject = null;
+//            String jsonStr = null;
+//            try {
+//                jsonObject = new JSONObject(json);
+//                //result提取剥离
+//                if (jsonObject.has("result")) {
+//                    Object result = jsonObject.opt("result");
+//                    if (jsonObject.length() == 1 && result instanceof JSONObject)
+//                        jsonStr = result.toString();
+//                }
+//                jsonObject.put("testFrom", "global before parse test");
+//                return jsonObject.toString();
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//            return null;
+//        };
     }
 
     @Nullable
@@ -110,19 +129,26 @@ public class ApiSetting implements Setting {
     public InterpreterParseError onErrorParse() {
         return new InterpreterParseError() {
             @Override
-            public Error onParseError(String json) throws Exception {
-                JSONObject obj = new JSONObject(json);
-                if (obj.has("error") && obj.has("code")) {
-                    Error error = new Error();
-                    error.setCode(obj.optInt("code", 0));
-                    error.setMsg(obj.optString("errmsg", ""));
-                    if (TextUtils.isEmpty(error.getMsg()))
-                        error.setMsg(obj.optString("result"));
-                    return error;
-                }
-                return null;
+            public Error onParseError(String json) {
+                Log.out("TestClassParserAnno.onParseError");
+                Error error = new Error();
+                error.setCode(888);
+                error.setMsg("global onErrorParse");
+                return error;
             }
         };
+//        return json -> {
+//            JSONObject obj = new JSONObject(json);
+//            if (obj.has("error") && obj.has("code")) {
+//                Error error = new Error();
+//                error.setCode(obj.optInt("code", 0));
+//                error.setMsg(obj.optString("errmsg", ""));
+//                if (TextUtils.isEmpty(error.getMsg()))
+//                    error.setMsg(obj.optString("result"));
+//                return error;
+//            }
+//            return null;
+//        };
     }
 
     @Nullable

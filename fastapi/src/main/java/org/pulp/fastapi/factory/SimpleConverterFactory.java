@@ -8,7 +8,6 @@ import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.jetbrains.annotations.NotNull;
 import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
@@ -17,7 +16,7 @@ import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.model.Str;
 import org.pulp.fastapi.util.ChainUtil;
 import org.pulp.fastapi.util.CommonUtil;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 import org.pulp.fastapi.model.Error;
 
 import java.io.IOException;
@@ -86,7 +85,7 @@ public class SimpleConverterFactory extends Converter.Factory {
     @Nullable
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
-        ULog.out("responseBodyConverter:type=" + type);
+        Log.out("responseBodyConverter:type=" + type);
         if (type == Str.class) {
             return stringModelConverter;
         } else {
@@ -105,15 +104,13 @@ public class SimpleConverterFactory extends Converter.Factory {
      * 获取请求回来的json,这个json有可能被加入的cache标记,需要清除掉
      */
     @NonNull
-    private ResponseInfo getResponseContent(ResponseBody value) throws IOException {
+    private ResponseInfo getResponseContent(ResponseBody value, Class dataClass) throws IOException {
         String string = value.string();
         if (TextUtils.isEmpty(string))
             return new ResponseInfo(false, string);
         ResponseInfo info = new ResponseInfo();
         String[] split = string.split(TAG_EXTRA);
-        if (split.length == 1)
-            return new ResponseInfo(false, string);
-        for (int i = 0; i < split.length - 1; i++) {
+        for (int i = 0; split.length > 1 && i < split.length - 1; i++) {
             String extra = split[i];
             String[] param = extra.split("=");
             if (param.length == 2) {
@@ -132,6 +129,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                                 if (o instanceof InterpreterParseBefore)
                                     info.beforeParser.add((InterpreterParseBefore) o);
                             }
+
                             break;
                         case InterpreterParseError.HEADER_FLAG:
                             info.errorParser = new ArrayList<>();
@@ -163,8 +161,32 @@ public class SimpleConverterFactory extends Converter.Factory {
         }
         info.json = split[split.length - 1];
 
-        ULog.out("getResponseContent.before json:" + string);
-        ULog.out("getResponseContent:" + info);
+
+        InterpreterParseBefore interpreterParseBefore = Bridge.getSetting().onBeforeParse();
+        if (interpreterParseBefore != null) {
+            if (info.beforeParser == null)
+                info.beforeParser = new ArrayList<>();
+            info.beforeParser.add(interpreterParseBefore);
+        }
+
+
+        InterpreterParseError interpreterParseError = Bridge.getSetting().onErrorParse();
+        if (interpreterParseError != null) {
+            if (info.errorParser == null)
+                info.errorParser = new ArrayList<>();
+            info.errorParser.add(interpreterParseError);
+        }
+
+        @SuppressWarnings("unchecked")
+        InterpreterParserCustom interpreterParserCustom = Bridge.getSetting().onCustomParse(dataClass);
+        if (interpreterParserCustom != null) {
+            if (info.customParser == null)
+                info.customParser = new ArrayList<>();
+            info.customParser.add(interpreterParserCustom);
+        }
+
+        Log.out("getResponseContent.before json:" + string);
+        Log.out("getResponseContent:" + info);
         return info;
     }
 
@@ -175,7 +197,7 @@ public class SimpleConverterFactory extends Converter.Factory {
     private class StringModelConverter implements Converter<ResponseBody, Str> {
         @Override
         public Str convert(@NonNull ResponseBody value) throws IOException {
-            ResponseInfo responseContent = getResponseContent(value);
+            ResponseInfo responseContent = getResponseContent(value, String.class);
             Str str = new Str(responseContent.json);
             str.setCache(responseContent.isCache);
             return str;
@@ -196,29 +218,32 @@ public class SimpleConverterFactory extends Converter.Factory {
 
         @Override
         public T convert(@NonNull ResponseBody value) throws IOException {
-            ResponseInfo responseInfo = getResponseContent(value);
+            ResponseInfo responseInfo = getResponseContent(value, (Class) type);
             String jsonStr = responseInfo.json;
 
             if (TextUtils.isEmpty(jsonStr))
                 return null;
 
+            Log.out("jsonStr--1=" + jsonStr);
 
             if (responseInfo.errorParser != null && responseInfo.errorParser.size() > 0) {
 
-                Error error = ChainUtil.doChain(false, (ChainUtil.Invoker<Error, InterpreterParseError, String>) (obj, arg) -> {
+                Error error = ChainUtil.doChain(false, (obj, arg) -> {
                     try {
                         return obj.onParseError(arg);
                     } catch (Exception e) {
                         CommonUtil.throwError(Error.ERR_PARSE_ERROR, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
                     }
                     return null;
-                }, responseInfo.errorParser, null);
+                }, responseInfo.errorParser, jsonStr);
 
                 if (error != null)
                     CommonUtil.throwError(error);
 
 
             }
+
+            Log.out("jsonStr--2=" + jsonStr);
 
             if (responseInfo.beforeParser != null && responseInfo.beforeParser.size() > 0) {
                 jsonStr = ChainUtil.doChain(true, (obj, arg) -> {
@@ -235,6 +260,8 @@ public class SimpleConverterFactory extends Converter.Factory {
                 }, responseInfo.beforeParser, jsonStr);
 
             }
+
+            Log.out("jsonStr--3=" + jsonStr);
 
 
             if (responseInfo.customParser != null && responseInfo.customParser.size() > 0) {
@@ -265,13 +292,13 @@ public class SimpleConverterFactory extends Converter.Factory {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            ULog.out("parse:data=" + data);
+            Log.out("parse:data=" + data);
             if (data == null) {
                 CommonUtil.throwError(Error.ERR_PARSE_BEAN, "parse error");
             }
 
             boolean cacheResponse = responseInfo.isCache;
-            ULog.out("parse:is cache response=" + cacheResponse);
+            Log.out("parse:is cache response=" + cacheResponse);
             if (data != null) {
                 data.setCache(cacheResponse);
             }

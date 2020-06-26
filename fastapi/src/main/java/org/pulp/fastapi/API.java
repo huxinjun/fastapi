@@ -2,8 +2,11 @@ package org.pulp.fastapi;
 
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
 
 import com.zhy.http.okhttp.https.HttpsUtils;
 
@@ -15,12 +18,12 @@ import org.pulp.fastapi.factory.SimpleConverterFactory;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.InterpreterParserCustom;
+import org.pulp.fastapi.life.ActivityLifeWatcher;
 import org.pulp.fastapi.life.DestoryHelper;
-import org.pulp.fastapi.life.DestoryWatcher;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.ChainUtil;
 import org.pulp.fastapi.util.CommonUtil;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,9 +55,9 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * 简化API调用的方式
  * Created by xinjun on 2019/11/29 16:44
  */
-public class ApiClient {
+public class API {
 
-    private static ApiClient client;
+    private static API client;
     private Setting setting;
     private OkHttpClient okHttpClient;
     private Map<String, Retrofit> retrofitMap = new HashMap<>();
@@ -68,31 +71,15 @@ public class ApiClient {
 
     /**
      * 获取api
-     *
-     * @param destoryWatcher 销毁监听,在任何需要操作ui的网络请求创建时必须传此参数,
-     *                       否则会造成activity或fragment销毁后操作UI导致的context为null,崩溃
-     * @param apiclass       api 声明类
-     * @return api接口类生成的一个Observable实例
      */
-    public static <T> T getApi(DestoryWatcher destoryWatcher, Class<T> apiclass) {
+    public static <T> T get(@NonNull Activity activity, @NonNull Class<T> apiclass) {
         if (getClient().setting == null)
             throw new RuntimeException("not init,please invoke init method");
-        return getClient().createProxyApi(destoryWatcher, apiclass);
+        return getClient().createProxyApi(activity, apiclass);
     }
 
 
-    /**
-     * 获取api
-     * !!!!!!!!!!!!!此方法只适用于获取固定url,configurl,其他的api请求请传递DestoryWatcher对象
-     */
-    public static <T> T getApi(Class<T> apiclass) {
-        if (getClient().setting == null)
-            throw new RuntimeException("not init,please invoke init method");
-        return getClient().createProxyApi(null, apiclass);
-    }
-
-
-    private ApiClient() {
+    private API() {
     }
 
 
@@ -122,6 +109,11 @@ public class ApiClient {
                 .readTimeout(setting.onGetReadTimeout(), TimeUnit.MILLISECONDS);
 
         okHttpClient = okHttpBuilder.build();
+
+        if (!(setting.onGetApplicationContext() instanceof Application))
+            throw new RuntimeException("Setting need return a Application at Setting.onGetApplicationContext()");
+        Application app = (Application) setting.onGetApplicationContext();
+        app.registerActivityLifecycleCallbacks(new ActivityLifeWatcher());
     }
 
     private static Interceptor INTERCEPTOR_NONET_CACHE_CONTROL = chain -> {
@@ -164,7 +156,7 @@ public class ApiClient {
      *
      */
     @SuppressWarnings("unchecked")
-    private <T> T createProxyApi(DestoryWatcher destoryWatcher, Class<T> apiClass) {
+    private <T> T createProxyApi(@NonNull Activity activity, Class<T> apiClass) {
         return (T) Proxy.newProxyInstance(apiClass.getClassLoader(), new Class<?>[]{apiClass},
                 (proxy, method, args) -> {
 
@@ -197,11 +189,10 @@ public class ApiClient {
                     }
 
                     Object invoke = method.invoke(retrofit.create(apiClass), args);
-                    ULog.out("createProxyApi.invoke=" + invoke);
+                    Log.out("createProxyApi.invoke=" + invoke);
                     if (invoke instanceof SimpleObservable) {
                         SimpleObservable simpleObservable = (SimpleObservable) invoke;
-                        if (destoryWatcher != null)
-                            DestoryHelper.add(destoryWatcher, simpleObservable);
+                        DestoryHelper.add(activity, simpleObservable);
                     }
 
                     lock.unlock();
@@ -266,9 +257,9 @@ public class ApiClient {
         return context instanceof Activity ? context.getApplicationContext() : context;
     }
 
-    static ApiClient getClient() {
+    static API getClient() {
         if (client == null) {
-            client = new ApiClient();
+            client = new API();
         }
         return client;
     }

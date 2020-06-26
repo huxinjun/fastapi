@@ -2,8 +2,7 @@ package org.pulp.main;
 
 
 import org.pulp.fastapi.i.PageCondition;
-import org.pulp.fastapi.model.IModel;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,15 +44,15 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
 
     @Override
     public Map<String, String> page(@Nullable T data, int go) {
-        ULog.out("go=" + go);
+        Log.out("go=" + go);
         if (data == null)
             return deffaultParamMap;
         int page = data.getPage();
         int page_next = data.getPage_next();
         int page_count = data.getPage_count();
-        ULog.out("page=" + page);
-        ULog.out("page_next=" + page_next);
-        ULog.out("page_count=" + page_count);
+        Log.out("page=" + page);
+        Log.out("page_next=" + page_next);
+        Log.out("page_count=" + page_count);
 
         return new HashMap<String, String>() {
             {

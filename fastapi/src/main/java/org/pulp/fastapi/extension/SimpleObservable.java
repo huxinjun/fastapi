@@ -12,7 +12,7 @@ import org.pulp.fastapi.life.DestoryWatcher;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.util.CommonUtil;
-import org.pulp.fastapi.util.ULog;
+import org.pulp.fastapi.util.Log;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -138,14 +138,14 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             newRequest = true;
             if (observer != null)
                 observer.onSubscribe(d);
-            ULog.out("onSubscribe");
+            Log.out("onSubscribe");
         }
 
         @Override
         public void onNext(T t) {
             if (isDisposed())
                 return;
-            ULog.out("onNext.data=" + t);
+            Log.out("onNext.data=" + t);
             setCurrData(t);
             if (t != null) {
                 if (SimpleObservable.this.success != null)
@@ -173,8 +173,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                     error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);
                 }
             }
-            ULog.out("onError.message=" + message);
-            ULog.out("onError.error=" + error);
+            Log.out("onError.message=" + message);
+            Log.out("onError.error=" + error);
 
             if (SimpleObservable.this.faild != null)
                 faild.onFaild(error);
@@ -200,9 +200,9 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
     @Override
     public void runInIO() {
-        ULog.out("RequestWatcher.runInIO=" + Thread.currentThread().getId());
+        Log.out("RequestWatcher.runInIO=" + Thread.currentThread().getId());
         SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), request -> {
-            ULog.out("RequestWatcher.callback=" + Thread.currentThread().getId());
+            Log.out("RequestWatcher.callback=" + Thread.currentThread().getId());
             Request.Builder builder = request.newBuilder();
             if (mRequestRebuilder != null)
                 mRequestRebuilder.onModify(builder, extraParam);
@@ -217,22 +217,22 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      */
     private void applyCacheControl(Request.Builder builder) {
         Request request = builder.build();
-        ULog.out("cachePolicy.url:" + request.url());
-        ULog.out("cachePolicy.before headers:" + request.headers());
+        Log.out("cachePolicy.url:" + request.url());
+        Log.out("cachePolicy.before headers:" + request.headers());
         String cacheHeader = request.header("Cache-Control");
         if (TextUtils.isEmpty(getCacheControl()))
             if (TextUtils.isEmpty(cacheHeader))
-                ULog.out("cachePolicy.use default cache control");
+                Log.out("cachePolicy.use default cache control");
             else
-                ULog.out("cachePolicy.use anno cache control:" + cacheHeader);
+                Log.out("cachePolicy.use anno cache control:" + cacheHeader);
         else {
             String[] split = getCacheControl().split(":");
             if (split.length > 1) {
                 builder.header("Cache-Control", split[1]);
-                ULog.out("cachePolicy.use dynamic cache control:" + split[1]);
+                Log.out("cachePolicy.use dynamic cache control:" + split[1]);
             }
         }
-        ULog.out("cachePolicy.after headers:" + request.headers());
+        Log.out("cachePolicy.after headers:" + request.headers());
     }
 
     /**
@@ -245,10 +245,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         try {
             Request request = builder.build();
             Request.Builder newBuilder = request.newBuilder();
-            ULog.out("cacheUseAllSupport.request:" + request);
+            Log.out("cacheUseAllSupport.request:" + request);
 
             String header = request.header("Cache-Control");
-            ULog.out("cacheUseAllSupport.header=" + header);
+            Log.out("cacheUseAllSupport.header=" + header);
             if (request.header("Accept-Encoding") == null && request.header("Range") == null)
                 newBuilder.header("Accept-Encoding", "gzip");
 
@@ -259,12 +259,12 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 internalCacheField.setAccessible(true);
                 InternalCache internalCache = (InternalCache) internalCacheField.get(Bridge.getCache());
                 Response response = internalCache.get(newBuilder.build());
-                ULog.out("cacheUseAllSupport.cache response=" + response);
+                Log.out("cacheUseAllSupport.cache response=" + response);
 
                 if (response == null)
                     return;
                 if (response.body() == null) {
-                    ULog.out("cacheUseAllSupport.response.body is null!!!");
+                    Log.out("cacheUseAllSupport.response.body is null!!!");
                     return;
                 }
 
@@ -275,23 +275,23 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                     responseBuilder.body(new RealResponseBody(response.headers(), Okio.buffer(responseBody)));
                     finalResponse = responseBuilder.build();
                     if (finalResponse.body() == null) {
-                        ULog.out("cacheUseAllSupport.finalResponse.body is null!!!");
+                        Log.out("cacheUseAllSupport.finalResponse.body is null!!!");
                         return;
                     }
                 }
 
                 Converter<ResponseBody, Object> bodyConverter = retrofit.responseBodyConverter(observableType, annotations);
                 if (bodyConverter == null) {
-                    ULog.out("cacheUseAllSupport.bodyConverter is null!!!");
+                    Log.out("cacheUseAllSupport.bodyConverter is null!!!");
                     return;
                 }
 
 
                 T cacheData = (T) bodyConverter.convert(finalResponse.body());
                 cacheData.setCache(true);
-                ULog.out("cacheUseAllSupport.cache data=" + cacheData);
+                Log.out("cacheUseAllSupport.cache data=" + cacheData);
                 String beforeCacheControl = getCacheControl();
-                ULog.out("cacheUseAllSupport.beforeCacheControl=" + beforeCacheControl);
+                Log.out("cacheUseAllSupport.beforeCacheControl=" + beforeCacheControl);
                 cachePolicy(CachePolicy.ONLY_NETWORK);//force change cache policy once for current request
                 mHandler.post(() -> {
                     if (observer != null)
@@ -314,13 +314,13 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      */
     public SimpleObservable<T> cachePolicy(CacheControl cacheControl) {
         this.cacheControl = cacheControl;
-        ULog.out("cachePolicy.newCacheControl:" + cacheControl);
+        Log.out("cachePolicy.newCacheControl:" + cacheControl);
         return this;
     }
 
 
     void subscribeIfNeed() {
-        ULog.out("subscribeIfNeed.isDisposed=" + isDisposed() + ",newRequest=" + newRequest);
+        Log.out("subscribeIfNeed.isDisposed=" + isDisposed() + ",newRequest=" + newRequest);
         if (isDisposed())
             return;
         if (!newRequest)
@@ -436,7 +436,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      */
     public SimpleObservable<T> cachePolicy(String cacheControlStr) {
         this.cacheControlStr = cacheControlStr;
-        ULog.out("cachePolicy.cacheControlStr:" + cacheControlStr);
+        Log.out("cachePolicy.cacheControlStr:" + cacheControlStr);
         return this;
     }
 
@@ -458,7 +458,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
     @Override
     public void dispose() {
-        ULog.out("dispose,path=" + path);
+        Log.out("dispose,path=" + path);
         //切断数据链
         DisposableHelper.dispose(atomicReference);
         //切断引用

@@ -1,13 +1,15 @@
 
 package org.pulp.fastapi.util;
 
-import android.util.Log;
+public class Log {
 
-public class ULog {
+    private static final boolean debug = true;
 
     static public void out(Object message) {
+        if (!debug)
+            return;
         StackTraceElement ste = new Throwable().getStackTrace()[1];
-        Log.i("xinjun", ste.getFileName() + ": Line " + ste.getLineNumber()
+        android.util.Log.i("xinjun", ste.getFileName() + ": Line " + ste.getLineNumber()
                 + "---result------------------------->" + (message == null ? "" : message.toString()));
     }
 }
