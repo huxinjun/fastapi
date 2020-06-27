@@ -1,6 +1,7 @@
 package org.pulp.fastapi.extension;
 
 
+import org.pulp.fastapi.i.CachePolicy;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
@@ -106,6 +107,11 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
     @Override
     public SimpleListObservable<T> cachePolicy(String cacheControlStr) {
         return (SimpleListObservable<T>) super.cachePolicy(cacheControlStr);
+    }
+
+    @Override
+    public SimpleListObservable<T> cachePolicy(CachePolicy cachePolicy) {
+        return (SimpleListObservable<T>) super.cachePolicy(cachePolicy);
     }
 
     @Override

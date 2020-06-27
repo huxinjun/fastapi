@@ -1,7 +1,6 @@
 package org.pulp.fastapi.anno;
 
 
-import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 
 import java.lang.annotation.Retention;

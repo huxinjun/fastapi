@@ -1,7 +1,7 @@
 package org.pulp.fastapi.model;
 
 
-import org.jetbrains.annotations.NotNull;
+import android.support.annotation.NonNull;
 
 public class Str implements IModel {
 
@@ -17,7 +17,7 @@ public class Str implements IModel {
         this.isCache = isCache;
     }
 
-    @NotNull
+    @NonNull
     @Override
     public String toString() {
         return "Str{" +

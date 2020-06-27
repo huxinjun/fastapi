@@ -1,5 +1,7 @@
 package org.pulp.fastapi.extension;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.pulp.fastapi.Bridge;
@@ -9,7 +11,7 @@ import org.pulp.fastapi.anno.OnAfterParse;
 import org.pulp.fastapi.anno.OnBeforeParse;
 import org.pulp.fastapi.anno.OnCustomParse;
 import org.pulp.fastapi.anno.OnErrorParse;
-import org.pulp.fastapi.anno.PAGE;
+import org.pulp.fastapi.anno.Page;
 import org.pulp.fastapi.anno.Param;
 import org.pulp.fastapi.anno.Params;
 import org.pulp.fastapi.anno.PathParser;
@@ -34,9 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -126,8 +125,8 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                 parseOnAfterParseAnno(findAnnoByClass(annotations, OnAfterParse.class));
                 if (annotations != null && annotations.length > 0) {
                     for (Annotation annotation : annotations) {
-                        if (annotation instanceof PAGE) {
-                            parsePageAnno((PAGE) annotation, simpleObservable);
+                        if (annotation instanceof Page) {
+                            parsePageAnno((Page) annotation, simpleObservable);
                         } else if (annotation instanceof Param) {
                             Map<String, String> paramMap = parseParamAnno((Param) annotation);
                             if (paramMap != null)
@@ -289,9 +288,9 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
 
     @SuppressWarnings("unchecked")
-    private void parsePageAnno(PAGE pageAnno, SimpleObservable<?> simpleObservable) {
+    private void parsePageAnno(Page pageAnno, SimpleObservable<?> simpleObservable) {
         Class<? extends PageCondition> value = pageAnno.value();
-        Log.out("adapt.PAGE.value=:" + value);
+        Log.out("adapt.Page.value=:" + value);
         try {
             PageCondition pageCondition = value.newInstance();
             ((SimpleListObservable) simpleObservable).pageCondition(pageCondition);

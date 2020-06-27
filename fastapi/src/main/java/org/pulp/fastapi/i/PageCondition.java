@@ -1,8 +1,9 @@
 package org.pulp.fastapi.i;
 
+import android.support.annotation.Nullable;
+
 import java.util.Map;
 
-import androidx.annotation.Nullable;
 
 /**
  * 自定义分页回调

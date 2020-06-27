@@ -7,7 +7,6 @@ import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.model.Error;
-import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.util.Log;
 
 public class TestMethodParserAnno implements InterpreterParserCustom<TestModel>, InterpreterParseError, InterpreterParseBefore, InterpreterParserAfter<String> {

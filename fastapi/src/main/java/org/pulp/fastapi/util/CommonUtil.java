@@ -9,6 +9,7 @@ import org.pulp.fastapi.model.Error;
 public class CommonUtil {
 
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isConnected(Context context) {
         if (context == null)
             return false;
@@ -30,6 +31,6 @@ public class CommonUtil {
     }
 
     public static void throwError(Error error) {
-        throw new RuntimeException(Error.Companion.err2str(error));
+        throw new RuntimeException(Error.err2str(error));
     }
 }

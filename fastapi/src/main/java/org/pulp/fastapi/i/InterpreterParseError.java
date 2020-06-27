@@ -1,9 +1,10 @@
 package org.pulp.fastapi.i;
 
 
+import android.support.annotation.NonNull;
+
 import org.pulp.fastapi.model.Error;
 
-import io.reactivex.annotations.NonNull;
 
 /**
  * parse error

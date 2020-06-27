@@ -1,7 +1,7 @@
 package org.pulp.fastapi.i;
 
 
-import io.reactivex.annotations.NonNull;
+import android.support.annotation.NonNull;
 
 /**
  * before parse json
@@ -17,6 +17,5 @@ public interface InterpreterParseBefore {
      * @param json a json
      * @return a json after modify
      */
-    @NonNull
     String onBeforeParse(@NonNull String json);
 }

@@ -4,9 +4,9 @@ package org.pulp.fastapi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 
 import com.zhy.http.okhttp.https.HttpsUtils;
 
@@ -21,7 +21,6 @@ import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.life.ActivityLifeWatcher;
 import org.pulp.fastapi.life.Bridge;
-import org.pulp.fastapi.life.DestoryHelper;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.ChainUtil;
 import org.pulp.fastapi.util.CommonUtil;
@@ -63,7 +62,7 @@ public class API {
     private Cache cache;
     private ReentrantLock lock = new ReentrantLock();
 
-    public static void init(Setting setting) {
+    public static void init(@NonNull Setting setting) {
         getClient().setting = setting;
         getClient().init();
     }

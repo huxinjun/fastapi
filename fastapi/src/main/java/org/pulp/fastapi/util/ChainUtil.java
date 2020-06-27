@@ -1,5 +1,7 @@
 package org.pulp.fastapi.util;
 
+import android.support.annotation.NonNull;
+
 import org.pulp.fastapi.i.InterpreterParseBefore;
 
 import java.util.Arrays;
@@ -91,20 +93,23 @@ public class ChainUtil {
 
     public static void main(String[] args) {
         InterpreterParseBefore i1 = new InterpreterParseBefore() {
+            @NonNull
             @Override
-            public String onBeforeParse(String json) {
+            public String onBeforeParse(@NonNull String json) {
                 return null;
             }
         };
         InterpreterParseBefore i2 = new InterpreterParseBefore() {
+            @NonNull
             @Override
-            public String onBeforeParse(String json) {
+            public String onBeforeParse(@NonNull String json) {
                 return json + "bbb";
             }
         };
         InterpreterParseBefore i3 = new InterpreterParseBefore() {
+            @NonNull
             @Override
-            public String onBeforeParse(String json) {
+            public String onBeforeParse(@NonNull String json) {
                 return null;
             }
         };

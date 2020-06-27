@@ -15,7 +15,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target(METHOD)
 @Retention(RUNTIME)
-public @interface PAGE {
+public @interface Page {
     Class<? extends PageCondition> value();
 }
 

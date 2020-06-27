@@ -3,7 +3,6 @@ package org.pulp.fastapi.util;
 import android.text.TextUtils;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import okhttp3.HttpUrl;
@@ -25,9 +24,7 @@ public class UrlUtil {
         if (map == null || map.size() == 0)
             return null;
         StringBuilder paramBuilder = new StringBuilder();
-        Iterator<Map.Entry<String, String>> iterator = map.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> next = iterator.next();
+        for (Map.Entry<String, String> next : map.entrySet()) {
             paramBuilder.append(next.getKey());
             paramBuilder.append("=");
             paramBuilder.append(next.getValue());

@@ -2,10 +2,8 @@ package org.pulp.fastapi.factory;
 
 
 import android.annotation.SuppressLint;
+import android.support.annotation.NonNull;
 
-import androidx.annotation.NonNull;
-
-import org.jetbrains.annotations.NotNull;
 import org.pulp.fastapi.util.Log;
 
 import java.util.HashMap;
@@ -36,7 +34,6 @@ public class SimpleCallFactory implements Call.Factory {
         this.okHttpClient = okHttpClient;
     }
 
-    @NotNull
     @Override
     public Call newCall(@NonNull Request request) {
         Log.out("RequestWatcher.create request=" + Thread.currentThread().getId());

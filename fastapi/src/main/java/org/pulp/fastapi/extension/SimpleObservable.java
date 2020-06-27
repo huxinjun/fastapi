@@ -1,6 +1,7 @@
 package org.pulp.fastapi.extension;
 
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -20,7 +21,6 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import androidx.annotation.NonNull;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -161,8 +161,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 return;
             String message = e.getMessage();
             Error error;
-            if (!TextUtils.isEmpty(message) && message.startsWith(Error.Companion.getSYMBOL())) {
-                error = Error.Companion.str2err(message);
+            if (!TextUtils.isEmpty(message) && message.startsWith(Error.SYMBOL)) {
+                error = Error.str2err(message);
             } else {
                 error = new Error();
                 if (!CommonUtil.isConnected(Bridge.getContext())) {
@@ -437,6 +437,19 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     public SimpleObservable<T> cachePolicy(String cacheControlStr) {
         this.cacheControlStr = cacheControlStr;
         Log.out("cachePolicy.cacheControlStr:" + cacheControlStr);
+        return this;
+    }
+
+
+    /**
+     * 动态切换缓存策略
+     *
+     * @param cachePolicy 新的缓存策略,enum type
+     * @return this
+     */
+    public SimpleObservable<T> cachePolicy(CachePolicy cachePolicy) {
+        this.cacheControlStr = cachePolicy.getValue();
+        Log.out("cachePolicy.cachePolicy enum:" + cachePolicy);
         return this;
     }
 

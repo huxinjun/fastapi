@@ -32,8 +32,8 @@ public class SimpleObserver<T> implements Observer<T> {
     public void onError(Throwable e) {
         String message = e.getMessage();
         Error error;
-        if (!TextUtils.isEmpty(message) && message.startsWith(Error.Companion.getSYMBOL())) {
-            error = Error.Companion.str2err(message);
+        if (!TextUtils.isEmpty(message) && message.startsWith(Error.SYMBOL)) {
+            error = Error.str2err(message);
         } else {
             error = new Error();
             error.setCode(Error.ERR_CRASH);

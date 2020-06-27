@@ -1,7 +1,7 @@
 package org.pulp.fastapi.i;
 
 
-import io.reactivex.annotations.NonNull;
+import android.support.annotation.NonNull;
 
 /**
  * after parse

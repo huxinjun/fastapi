@@ -23,6 +23,9 @@ android {
         sourceCompatibility = 1.8
         targetCompatibility = 1.8
     }
+    packagingOptions {
+        exclude 'META-INF/proguard/androidx-annotations.pro'
+    }
 
 }
 
@@ -51,7 +54,7 @@ dependencies {
     implementation 'com.zhy:okhttputils:2.6.2'
 
 
-//    implementation 'org.pulp:fastapi:1.0.0'
+//    implementation 'org.pulp:fastapi:1.1.1'
 }
 repositories {
     mavenCentral()
