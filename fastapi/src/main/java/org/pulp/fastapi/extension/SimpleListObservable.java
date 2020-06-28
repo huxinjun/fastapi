@@ -56,13 +56,16 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         }
         if (!mPageCondition.hasMore(getCurrData())) {
             abortOnce();
-            getHandler().post(() -> {
-                Error error = new Error();
-                error.setCode(Error.ERR_NO_MORE_DATA);
-                error.setMsg("no more data");
-                Faild faildCallBack = getFaildCallBack();
-                if (faildCallBack != null)
-                    faildCallBack.onFaild(error);
+            getHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    Error error = new Error();
+                    error.setCode(Error.ERR_NO_MORE_DATA);
+                    error.setMsg("no more data");
+                    Faild faildCallBack = getFaildCallBack();
+                    if (faildCallBack != null)
+                        faildCallBack.onFaild(error);
+                }
             });
             return this;
         }

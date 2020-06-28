@@ -1,13 +1,14 @@
 package org.pulp.main;
 
 
+import android.support.annotation.Nullable;
+
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import androidx.annotation.Nullable;
 
 
 /**

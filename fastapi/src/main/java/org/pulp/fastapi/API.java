@@ -28,6 +28,7 @@ import org.pulp.fastapi.util.Log;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -114,42 +115,51 @@ public class API {
         app.registerActivityLifecycleCallbacks(new ActivityLifeWatcher());
     }
 
-    private static Interceptor INTERCEPTOR_NONET_CACHE_CONTROL = chain -> {
-        Request request = chain.request();
-        CacheControl cacheControl = request.cacheControl();
-        if (!CommonUtil.isConnected(getClient().setting.onGetApplicationContext())) {
-            if (!cacheControl.noCache())
-                request = request.newBuilder()
-                        .cacheControl(CacheControl.FORCE_CACHE)//只访问缓存
-                        .build();
+    private static Interceptor INTERCEPTOR_NONET_CACHE_CONTROL = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            CacheControl cacheControl = request.cacheControl();
+            if (!CommonUtil.isConnected(getClient().setting.onGetApplicationContext())) {
+                if (!cacheControl.noCache())
+                    request = request.newBuilder()
+                            .cacheControl(CacheControl.FORCE_CACHE)//只访问缓存
+                            .build();
+            }
+            return setCacheTag(chain.proceed(request));
         }
-        return setCacheTag(chain.proceed(request));
     };
 
-    private static Interceptor INTERCEPTOR_PARSER_SUPPORT = chain -> {
-        Request request = chain.request();
-        String extra_anno_parser_before = request.header(InterpreterParseBefore.HEADER_FLAG);
-        String extra_anno_parser_error = request.header(InterpreterParseError.HEADER_FLAG);
-        String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
-        String extra_anno_parser_after = request.header(InterpreterParserAfter.HEADER_FLAG);
-        Response response = chain.proceed(request);
-        if (!TextUtils.isEmpty(extra_anno_parser_before))
-            response = setExtraTag(response, InterpreterParseBefore.HEADER_FLAG, extra_anno_parser_before);
-        if (!TextUtils.isEmpty(extra_anno_parser_error))
-            response = setExtraTag(response, InterpreterParseError.HEADER_FLAG, extra_anno_parser_error);
-        if (!TextUtils.isEmpty(extra_anno_parser_custom))
-            response = setExtraTag(response, InterpreterParserCustom.HEADER_FLAG, extra_anno_parser_custom);
-        if (!TextUtils.isEmpty(extra_anno_parser_after))
-            response = setExtraTag(response, InterpreterParserAfter.HEADER_FLAG, extra_anno_parser_after);
-        return response;
+    private static Interceptor INTERCEPTOR_PARSER_SUPPORT = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            String extra_anno_parser_before = request.header(InterpreterParseBefore.HEADER_FLAG);
+            String extra_anno_parser_error = request.header(InterpreterParseError.HEADER_FLAG);
+            String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
+            String extra_anno_parser_after = request.header(InterpreterParserAfter.HEADER_FLAG);
+            Response response = chain.proceed(request);
+            if (!TextUtils.isEmpty(extra_anno_parser_before))
+                response = setExtraTag(response, InterpreterParseBefore.HEADER_FLAG, extra_anno_parser_before);
+            if (!TextUtils.isEmpty(extra_anno_parser_error))
+                response = setExtraTag(response, InterpreterParseError.HEADER_FLAG, extra_anno_parser_error);
+            if (!TextUtils.isEmpty(extra_anno_parser_custom))
+                response = setExtraTag(response, InterpreterParserCustom.HEADER_FLAG, extra_anno_parser_custom);
+            if (!TextUtils.isEmpty(extra_anno_parser_after))
+                response = setExtraTag(response, InterpreterParserAfter.HEADER_FLAG, extra_anno_parser_after);
+            return response;
+        }
     };
 
 
-    private static Interceptor INTERCEPTOR_STATIC_URL_SUPPORT = chain -> {
-        Request request = chain.request();
-        if (request.header("StaticUrl") != null)
-            CommonUtil.throwError(Error.STATIC_URL_TRICK, "this is a trick!");
-        return chain.proceed(request);
+    private static Interceptor INTERCEPTOR_STATIC_URL_SUPPORT = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            if (request.header("StaticUrl") != null)
+                CommonUtil.throwError(Error.STATIC_URL_TRICK, "this is a trick!");
+            return chain.proceed(request);
+        }
     };
 
 
@@ -157,47 +167,53 @@ public class API {
      *
      */
     @SuppressWarnings("unchecked")
-    private <T> T createProxyApi(@NonNull Activity activity, Class<T> apiClass) {
+    private <T> T createProxyApi(@NonNull final Activity activity, final Class<T> apiClass) {
         return (T) Proxy.newProxyInstance(apiClass.getClassLoader(), new Class<?>[]{apiClass},
-                (proxy, method, args) -> {
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-                    //防止多个线程同时请求接口,改变了SimpleCallAdapterFactory中对apiClass的引用
-                    lock.tryLock();
+                        //防止多个线程同时请求接口,改变了SimpleCallAdapterFactory中对apiClass的引用
+                        lock.tryLock();
 
-                    List<String> baseUrls = findBaseUrls(apiClass, method);
-                    String baseUrl = ChainUtil.doChain(false, (obj) -> {
-                        if (TextUtils.isEmpty(obj))
-                            return null;
-                        return obj;
-                    }, baseUrls);
+                        List<String> baseUrls = findBaseUrls(apiClass, method);
+                        String baseUrl = ChainUtil.doChain(false, new ChainUtil.BasicInvoker<String, String>() {
+                            @Override
+                            public String invoke(String obj) {
+                                if (TextUtils.isEmpty(obj))
+                                    return null;
+                                return obj;
+                            }
+                        }, baseUrls);
 
-                    Retrofit retrofit = retrofitMap.get(baseUrl);
-                    if (retrofit == null) {
-                        retrofit = new Retrofit.Builder()
-                                .baseUrl(baseUrl)//不写会报错，动态域会被 @Url 替换
-                                .callFactory(SimpleCallFactory.getInstance(okHttpClient))
-                                .addConverterFactory(SimpleConverterFactory.create())
-                                .addCallAdapterFactory(SimpleCallAdapterFactory.create())//支持SimpleObservable
-                                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())//支持rxjava
-                                .build();
-                        retrofitMap.put(baseUrl, retrofit);
+                        Retrofit retrofit = retrofitMap.get(baseUrl);
+                        if (retrofit == null) {
+                            retrofit = new Retrofit.Builder()
+                                    .baseUrl(baseUrl)//不写会报错，动态域会被 @Url 替换
+                                    .callFactory(SimpleCallFactory.getInstance(okHttpClient))
+                                    .addConverterFactory(SimpleConverterFactory.create())
+                                    .addCallAdapterFactory(SimpleCallAdapterFactory.create())//支持SimpleObservable
+                                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())//支持rxjava
+                                    .build();
+                            retrofitMap.put(baseUrl, retrofit);
+                        }
+
+                        List<CallAdapter.Factory> factories = retrofit.callAdapterFactories();
+                        for (CallAdapter.Factory f : factories) {
+                            if (f instanceof SimpleCallAdapterFactory)
+                                ((SimpleCallAdapterFactory) f).setApiClass(apiClass);
+                        }
+
+                        Object invoke = method.invoke(retrofit.create(apiClass), args);
+                        Log.out("createProxyApi.invoke=" + invoke);
+                        if (invoke instanceof SimpleObservable) {
+                            SimpleObservable simpleObservable = (SimpleObservable) invoke;
+                            Bridge.addDestoryListener(activity, simpleObservable);
+                        }
+
+                        lock.unlock();
+                        return invoke;
                     }
-
-                    List<CallAdapter.Factory> factories = retrofit.callAdapterFactories();
-                    for (CallAdapter.Factory f : factories) {
-                        if (f instanceof SimpleCallAdapterFactory)
-                            ((SimpleCallAdapterFactory) f).setApiClass(apiClass);
-                    }
-
-                    Object invoke = method.invoke(retrofit.create(apiClass), args);
-                    Log.out("createProxyApi.invoke=" + invoke);
-                    if (invoke instanceof SimpleObservable) {
-                        SimpleObservable simpleObservable = (SimpleObservable) invoke;
-                        Bridge.addDestoryListener(activity, simpleObservable);
-                    }
-
-                    lock.unlock();
-                    return invoke;
                 });
     }
 

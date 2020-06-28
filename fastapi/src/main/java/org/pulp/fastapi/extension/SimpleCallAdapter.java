@@ -91,7 +91,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
         //动态url
         try {
-            AtomicReference<String> staticUrl = new AtomicReference<>();
+            final AtomicReference<String> staticUrl = new AtomicReference<>();
             String path = findPath();
             Log.out("find path from method annotation:" + path);
             if (path == null)
@@ -118,7 +118,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
                 IOObservable.setListener(simpleObservable);
 
-                Map<String, String> annoParams = new LinkedHashMap<>();
+                final Map<String, String> annoParams = new LinkedHashMap<>();
                 parseOnBeforeParseAnno(findAnnoByClass(annotations, OnBeforeParse.class));
                 parseOnErrorParseAnno(findAnnoByClass(annotations, OnErrorParse.class));
                 parseOnCustomParseAnno(findAnnoByClass(annotations, OnCustomParse.class));
@@ -150,91 +150,94 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                     return adapt;
 
                 simpleObservable.setPath(path);
-                SimpleObservable<?> finalSimpleObservable = simpleObservable;
-                String finalPath = path;
-                simpleObservable.setRequestRebuilder((requestBuilder, extraParams) -> {
+                final SimpleObservable<?> finalSimpleObservable = simpleObservable;
+                final String finalPath = path;
+                simpleObservable.setRequestRebuilder(new SimpleObservable.RequestRebuilder() {
+                    @Override
+                    public void onModify(Request.Builder requestBuilder, Map<String, String> extraParams) {
 
-                    Request request = requestBuilder.build();
+                        Request request = requestBuilder.build();
 
-                    boolean isPostMethod = "post".equalsIgnoreCase(request.method());
+                        boolean isPostMethod = "post".equalsIgnoreCase(request.method());
 
-                    Map<String, String> params = new LinkedHashMap<>();
-                    Map<String, String> queryParams = requestParam2map(request); // 此处为原始request中的参数
-                    Map<String, String> baseParams = Bridge.getSetting().onGetCommonParams();
-                    // 基础参数
-                    if (baseParams != null)
-                        params.putAll(baseParams);
+                        Map<String, String> params = new LinkedHashMap<>();
+                        Map<String, String> queryParams = requestParam2map(request); // 此处为原始request中的参数
+                        Map<String, String> baseParams = Bridge.getSetting().onGetCommonParams();
+                        // 基础参数
+                        if (baseParams != null)
+                            params.putAll(baseParams);
 
-                    //注解参数
-                    params.putAll(annoParams);
+                        //注解参数
+                        params.putAll(annoParams);
 
-                    //分页参数
-                    if (extraParams != null)
-                        params.putAll(extraParams);
+                        //分页参数
+                        if (extraParams != null)
+                            params.putAll(extraParams);
 
-                    String newPath = finalPath;
-                    String convertUrl = null;
-                    if (finalSimpleObservable instanceof SequenceObservable)
-                        newPath = ((SequenceObservable) finalSimpleObservable).getCurrPath();
+                        String newPath = finalPath;
+                        String convertUrl = null;
+                        if (finalSimpleObservable instanceof SequenceObservable)
+                            newPath = ((SequenceObservable) finalSimpleObservable).getCurrPath();
 
-                    boolean needConvertPath = !finalPath.startsWith("http") && !finalPath.startsWith("/");
-                    if (needConvertPath) {
-                        convertUrl = pathConvert(newPath);
-                        //check url valid
-                        try {
-                            assert convertUrl != null;
-                            new Request.Builder().url(convertUrl).build();
-                        } catch (IllegalArgumentException e) {
-                            CommonUtil.throwError(Error.ERR_CRASH, "convert url invalid,path="
-                                    + newPath
-                                    + ",url="
-                                    + convertUrl
-                                    + ",PathConverter="
-                                    + (getPathConvert() == null ? "null" : getPathConvert().getClass().getName())
-                            );
+                        boolean needConvertPath = !finalPath.startsWith("http") && !finalPath.startsWith("/");
+                        if (needConvertPath) {
+                            convertUrl = pathConvert(newPath);
+                            //check url valid
+                            try {
+                                assert convertUrl != null;
+                                new Request.Builder().url(convertUrl).build();
+                            } catch (IllegalArgumentException e) {
+                                CommonUtil.throwError(Error.ERR_CRASH, "convert url invalid,path="
+                                        + newPath
+                                        + ",url="
+                                        + convertUrl
+                                        + ",PathConverter="
+                                        + (getPathConvert() == null ? "null" : getPathConvert().getClass().getName())
+                                );
+                            }
                         }
-                    }
 
-                    Log.out("before url:" + convertUrl);
+                        Log.out("before url:" + convertUrl);
 
-                    // 开始根据不同请求方式构建新Request 并返回
-                    if (!isPostMethod) {
-                        //GET
-                        //重组的get请求的request对象必须有params,不然请求不会携带url中的参数,参见:
-                        //RealConnection.newCodec-->Http2Codec.http2HeadersList-->RequestLine.requestPath
-                        if (!TextUtils.isEmpty(convertUrl)) {
-                            params.putAll(queryParams);
-                            convertUrl = UrlUtil.map2url(convertUrl, params);
-                        } else
-                            convertUrl = UrlUtil.map2url(request.url().toString(), params);
+                        // 开始根据不同请求方式构建新Request 并返回
+                        if (!isPostMethod) {
+                            //GET
+                            //重组的get请求的request对象必须有params,不然请求不会携带url中的参数,参见:
+                            //RealConnection.newCodec-->Http2Codec.http2HeadersList-->RequestLine.requestPath
+                            if (!TextUtils.isEmpty(convertUrl)) {
+                                params.putAll(queryParams);
+                                convertUrl = UrlUtil.map2url(convertUrl, params);
+                            } else
+                                convertUrl = UrlUtil.map2url(request.url().toString(), params);
 
-                        Log.out("after url:" + convertUrl);
-                        requestBuilder.url(convertUrl);
-                    } else {
-                        //POST
-                        //query param should append to url
-                        if (!TextUtils.isEmpty(convertUrl))
-                            convertUrl = UrlUtil.map2url(convertUrl, queryParams);
-                        else
-                            convertUrl = request.url().toString();
-                        //reconstruct post request and add post param body
-                        assemblePostRequest(requestBuilder, convertUrl, params);
-                    }
+                            Log.out("after url:" + convertUrl);
+                            requestBuilder.url(convertUrl);
+                        } else {
+                            //POST
+                            //query param should append to url
+                            if (!TextUtils.isEmpty(convertUrl))
+                                convertUrl = UrlUtil.map2url(convertUrl, queryParams);
+                            else
+                                convertUrl = request.url().toString();
+                            //reconstruct post request and add post param body
+                            assemblePostRequest(requestBuilder, convertUrl, params);
+                        }
 
-                    //user parse support
-                    if (!TextUtils.isEmpty(classArr2str(parserBeforeClasses)))
-                        requestBuilder.addHeader(InterpreterParseBefore.HEADER_FLAG, classArr2str(parserBeforeClasses));
-                    if (!TextUtils.isEmpty(classArr2str(parserErrorClasses)))
-                        requestBuilder.addHeader(InterpreterParseError.HEADER_FLAG, classArr2str(parserErrorClasses));
-                    if (!TextUtils.isEmpty(classArr2str(parserCustomClasses)))
-                        requestBuilder.addHeader(InterpreterParserCustom.HEADER_FLAG, classArr2str(parserCustomClasses));
-                    if (!TextUtils.isEmpty(classArr2str(parserAfterClasses)))
-                        requestBuilder.addHeader(InterpreterParserAfter.HEADER_FLAG, classArr2str(parserAfterClasses));
+                        //user parse support
+                        if (!TextUtils.isEmpty(classArr2str(parserBeforeClasses)))
+                            requestBuilder.addHeader(InterpreterParseBefore.HEADER_FLAG, classArr2str(parserBeforeClasses));
+                        if (!TextUtils.isEmpty(classArr2str(parserErrorClasses)))
+                            requestBuilder.addHeader(InterpreterParseError.HEADER_FLAG, classArr2str(parserErrorClasses));
+                        if (!TextUtils.isEmpty(classArr2str(parserCustomClasses)))
+                            requestBuilder.addHeader(InterpreterParserCustom.HEADER_FLAG, classArr2str(parserCustomClasses));
+                        if (!TextUtils.isEmpty(classArr2str(parserAfterClasses)))
+                            requestBuilder.addHeader(InterpreterParserAfter.HEADER_FLAG, classArr2str(parserAfterClasses));
 
 
-                    if (rawType == URL.class) {
-                        requestBuilder.addHeader("StaticUrl", "true");
-                        staticUrl.set(convertUrl);
+                        if (rawType == URL.class) {
+                            requestBuilder.addHeader("StaticUrl", "true");
+                            staticUrl.set(convertUrl);
+                        }
                     }
                 });
 
@@ -303,7 +306,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
 
     private Map<String, String> parseParamAnno(Param paramAnno) {
-        String[] value = paramAnno.value();
+        final String[] value = paramAnno.value();
         switch (value.length) {
             case 0:
                 return null;

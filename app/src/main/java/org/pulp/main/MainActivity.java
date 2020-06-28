@@ -3,6 +3,9 @@ package org.pulp.main;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
@@ -11,10 +14,6 @@ import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.model.Str;
 
 import java.net.URL;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import cn.aichang.blackbeauty.base.net.api.TestAPI;
 
@@ -31,9 +30,9 @@ public class MainActivity extends AppCompatActivity {
 
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                },
-                0);
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.INTERNET
+                },0);
     }
 
 

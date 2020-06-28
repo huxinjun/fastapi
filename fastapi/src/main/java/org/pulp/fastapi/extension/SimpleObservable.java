@@ -201,14 +201,17 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     @Override
     public void runInIO() {
         Log.out("RequestWatcher.runInIO=" + Thread.currentThread().getId());
-        SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), request -> {
-            Log.out("RequestWatcher.callback=" + Thread.currentThread().getId());
-            Request.Builder builder = request.newBuilder();
-            if (mRequestRebuilder != null)
-                mRequestRebuilder.onModify(builder, extraParam);
-            applyCacheControl(builder);
-            cacheUseAllSupport(builder, mInternalObserver);
-            return builder.build();
+        SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), new SimpleCallFactory.RequestWatcher() {
+            @Override
+            public Request onRequestCreated(Request request) {
+                Log.out("RequestWatcher.callback=" + Thread.currentThread().getId());
+                Request.Builder builder = request.newBuilder();
+                if (mRequestRebuilder != null)
+                    mRequestRebuilder.onModify(builder, extraParam);
+                applyCacheControl(builder);
+                cacheUseAllSupport(builder, mInternalObserver);
+                return builder.build();
+            }
         });
     }
 
@@ -241,7 +244,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      * @param observer downstream
      */
     @SuppressWarnings("unchecked")
-    private void cacheUseAllSupport(Request.Builder builder, Observer<? super T> observer) {
+    private void cacheUseAllSupport(Request.Builder builder, final Observer<? super T> observer) {
         try {
             Request request = builder.build();
             Request.Builder newBuilder = request.newBuilder();
@@ -272,7 +275,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 okhttp3.Response.Builder responseBuilder = response.newBuilder().request(newBuilder.build());
                 if ("gzip".equalsIgnoreCase(response.header("Content-Encoding")) && HttpHeaders.hasBody(response)) {
                     GzipSource responseBody = new GzipSource(response.body().source());
-                    responseBuilder.body(new RealResponseBody(response.headers(), Okio.buffer(responseBody)));
+                    responseBuilder.body(new RealResponseBody(response.header("Content-Type"), response.body().contentLength(), Okio.buffer(responseBody)));
                     finalResponse = responseBuilder.build();
                     if (finalResponse.body() == null) {
                         Log.out("cacheUseAllSupport.finalResponse.body is null!!!");
@@ -287,16 +290,19 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 }
 
 
-                T cacheData = (T) bodyConverter.convert(finalResponse.body());
+                final T cacheData = (T) bodyConverter.convert(finalResponse.body());
                 cacheData.setCache(true);
                 Log.out("cacheUseAllSupport.cache data=" + cacheData);
-                String beforeCacheControl = getCacheControl();
+                final String beforeCacheControl = getCacheControl();
                 Log.out("cacheUseAllSupport.beforeCacheControl=" + beforeCacheControl);
                 cachePolicy(CachePolicy.ONLY_NETWORK.getValue());//force change cache policy once for current request
-                mHandler.post(() -> {
-                    if (observer != null)
-                        observer.onNext(cacheData);
-                    cachePolicy(beforeCacheControl);//restore on main thread
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (observer != null)
+                            observer.onNext(cacheData);
+                        cachePolicy(beforeCacheControl);//restore on main thread
+                    }
                 });
 
             }
@@ -325,7 +331,12 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             return;
         if (!newRequest)
             return;
-        mHandler.post(() -> subscribe(simpleObserver));
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                subscribe(simpleObserver);
+            }
+        });
         newRequest = false;
     }
 
@@ -333,7 +344,12 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     //用于分页没有数据时,不让success等方法发出订阅请求
     void abortOnce() {
         newRequest = false;
-        mHandler.post(() -> newRequest = true);
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                newRequest = true;
+            }
+        });
     }
 
 

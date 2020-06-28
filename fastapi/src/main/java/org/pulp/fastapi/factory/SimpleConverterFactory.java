@@ -246,13 +246,16 @@ public class SimpleConverterFactory extends Converter.Factory {
 
             if (responseInfo.errorParser != null && responseInfo.errorParser.size() > 0) {
 
-                Error error = ChainUtil.doChain(false, (obj, arg) -> {
-                    try {
-                        return obj.onParseError(arg);
-                    } catch (Exception e) {
-                        CommonUtil.throwError(Error.ERR_PARSE_ERROR, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
+                Error error = ChainUtil.doChain(false, new ChainUtil.Invoker<Error, InterpreterParseError, String>() {
+                    @Override
+                    public Error invoke(InterpreterParseError obj, String arg) {
+                        try {
+                            return obj.onParseError(arg);
+                        } catch (Exception e) {
+                            CommonUtil.throwError(Error.ERR_PARSE_ERROR, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
+                        }
+                        return null;
                     }
-                    return null;
                 }, responseInfo.errorParser, jsonStr);
 
                 if (error != null)
@@ -264,17 +267,19 @@ public class SimpleConverterFactory extends Converter.Factory {
             Log.out("jsonStr--2=" + jsonStr);
 
             if (responseInfo.beforeParser != null && responseInfo.beforeParser.size() > 0) {
-                jsonStr = ChainUtil.doChain(true, (obj, arg) -> {
-                    try {
-                        String ret = obj.onBeforeParse(arg);
-                        if (TextUtils.isEmpty(ret))
-                            return null;
-                        return ret;
-                    } catch (Exception e) {
-                        CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParseBefore.onBeforeParse,class is" + obj.getClass().getName());
+                jsonStr = ChainUtil.doChain(true, new ChainUtil.Invoker<String, InterpreterParseBefore, String>() {
+                    @Override
+                    public String invoke(InterpreterParseBefore obj, String arg) {
+                        try {
+                            String ret = obj.onBeforeParse(arg);
+                            if (TextUtils.isEmpty(ret))
+                                return null;
+                            return ret;
+                        } catch (Exception e) {
+                            CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParseBefore.onBeforeParse,class is" + obj.getClass().getName());
+                        }
+                        return null;
                     }
-                    return null;
-
                 }, responseInfo.beforeParser, jsonStr);
 
             }
@@ -283,16 +288,18 @@ public class SimpleConverterFactory extends Converter.Factory {
 
 
             if (responseInfo.customParser != null && responseInfo.customParser.size() > 0) {
-                T customParseData = ChainUtil.doChain(false, (obj, arg) -> {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        T ret = (T) obj.onCustomParse(arg);
-                        return ret;
-                    } catch (Exception e) {
-                        CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParserCustom.onCustomParse,class is" + obj.getClass().getName());
+                T customParseData = ChainUtil.doChain(false, new ChainUtil.Invoker<T, InterpreterParserCustom, String>() {
+                    @Override
+                    public T invoke(InterpreterParserCustom obj, String arg) {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            T ret = (T) obj.onCustomParse(arg);
+                            return ret;
+                        } catch (Exception e) {
+                            CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParserCustom.onCustomParse,class is" + obj.getClass().getName());
+                        }
+                        return null;
                     }
-                    return null;
-
                 }, responseInfo.customParser, jsonStr);
 
                 if (customParseData != null) {

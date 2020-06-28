@@ -1,5 +1,6 @@
 package org.pulp.fastapi.extension;
 
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 
@@ -40,30 +41,42 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     public SequenceObservable<T> refresh() {
         setExtraParam(null);
         setCurrData(null);
-        super.success(data -> {
-            dispose();
+        super.success(new Success<T>() {
+            @Override
+            public void onSuccess(T data) {
+                dispose();
+            }
         });
-        super.faild(error -> {
-            Log.out("success.faild hash=" + this.hashCode());
-            if (unreachableCallback != null)
-                unreachableCallback.onUnreachable(error, getCurrPath());
-            nextUrl();
+        super.faild(new Faild() {
+            @Override
+            public void onFaild(@NonNull Error error) {
+                Log.out("success.faild hash=" + this.hashCode());
+                if (unreachableCallback != null)
+                    unreachableCallback.onUnreachable(error, getCurrPath());
+                nextUrl();
+            }
         });
         return this;
     }
 
     @Override
-    public SequenceObservable<T> success(Success<T> success) {
-        super.success(data -> {
-            if (success != null)
-                success.onSuccess(data);
-            dispose();
+    public SequenceObservable<T> success(final Success<T> success) {
+        super.success(new Success<T>() {
+            @Override
+            public void onSuccess(T data) {
+                if (success != null)
+                    success.onSuccess(data);
+                dispose();
+            }
         });
-        super.faild(error -> {
-            Log.out("success.faild hash=" + this.hashCode());
-            if (unreachableCallback != null)
-                unreachableCallback.onUnreachable(error, getCurrPath());
-            nextUrl();
+        super.faild(new Faild() {
+            @Override
+            public void onFaild(@NonNull Error error) {
+                Log.out("success.faild hash=" + this.hashCode());
+                if (unreachableCallback != null)
+                    unreachableCallback.onUnreachable(error, getCurrPath());
+                nextUrl();
+            }
         });
         return this;
     }
