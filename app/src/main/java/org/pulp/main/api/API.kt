@@ -3,17 +3,27 @@ package cn.aichang.blackbeauty.base.net.api
 import org.pulp.fastapi.anno.*
 import org.pulp.fastapi.i.CachePolicy.*
 import org.pulp.fastapi.extension.SequenceObservable
+import org.pulp.fastapi.extension.SimpleListObservable
 import org.pulp.fastapi.extension.SimpleObservable
 import org.pulp.fastapi.model.Str
-import org.pulp.main.*
+import org.pulp.main.model.ListModel
+import org.pulp.main.model.TestModel
+import org.pulp.main.model.UrlKey
+import org.pulp.main.page.BadCondition
+import org.pulp.main.page.CommonPageCondition
+import org.pulp.main.parser.ListBeforeParser
+import org.pulp.main.parser.TestMethodParserAnno
+import org.pulp.main.parser.UrlKeyParser
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Query
 import java.net.URL
 
 //@OnCustomParse(TestClassParserAnno::class)
 //@OnErrorParse(TestClassParserAnno::class)
 //@OnBeforeParse(TestClassParserAnno::class)
-@OnAfterParse(TestClassParserAnno::class)
+//@OnAfterParse(TestClassParserAnno::class)
+//@Page(CommonPageCondition::class)
 interface TestAPI {
 
     @GET("getConfig")
@@ -38,7 +48,7 @@ interface TestAPI {
     //    @OnBeforeParse(TestMethodParserAnno::class)
 //    @OnCustomParse(TestMethodParserAnno::class)
 //    @OnErrorParse(TestMethodParserAnno::class)
-    @OnAfterParse(TestMethodParserAnno::class)
+//    @OnAfterParse(TestMethodParserAnno::class)
     @GET(UrlKey.COMMON_FLASHSCREEN)
     fun getDataConvertPath(): SimpleObservable<TestModel>
 
@@ -46,8 +56,15 @@ interface TestAPI {
     fun getDataNoConvertPath(): SimpleObservable<Str>
 
 
-    @Cache(ONLY_CAHCE)
+    @Cache(USE_ALL)
     @GET(UrlKey.COMMON_FLASHSCREEN)
     fun getDataCacheUseAll(): SimpleObservable<Str>
+
+
+    //分页数据测试
+    @POST(UrlKey.HOT_TODAY_SELECTED)
+//    @Page(BadCondition::class)
+    @OnBeforeParse(ListBeforeParser::class)
+    fun getListData(): SimpleListObservable<ListModel>
 }
 

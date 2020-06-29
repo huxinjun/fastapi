@@ -1,4 +1,4 @@
-package org.pulp.main;
+package org.pulp.main.api;
 
 import android.app.Application;
 

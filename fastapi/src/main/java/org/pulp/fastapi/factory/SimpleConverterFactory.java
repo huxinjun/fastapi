@@ -188,7 +188,6 @@ public class SimpleConverterFactory extends Converter.Factory {
             info.errorParser.add(interpreterParseError);
         }
 
-        @SuppressWarnings("unchecked")
         InterpreterParserCustom interpreterParserCustom = Bridge.getSetting().onCustomParse(dataClass);
         if (interpreterParserCustom != null) {
             if (info.customParser == null)
@@ -242,8 +241,6 @@ public class SimpleConverterFactory extends Converter.Factory {
             if (TextUtils.isEmpty(jsonStr))
                 return null;
 
-            Log.out("jsonStr--1=" + jsonStr);
-
             if (responseInfo.errorParser != null && responseInfo.errorParser.size() > 0) {
 
                 Error error = ChainUtil.doChain(false, new ChainUtil.Invoker<Error, InterpreterParseError, String>() {
@@ -260,11 +257,7 @@ public class SimpleConverterFactory extends Converter.Factory {
 
                 if (error != null)
                     CommonUtil.throwError(error);
-
-
             }
-
-            Log.out("jsonStr--2=" + jsonStr);
 
             if (responseInfo.beforeParser != null && responseInfo.beforeParser.size() > 0) {
                 jsonStr = ChainUtil.doChain(true, new ChainUtil.Invoker<String, InterpreterParseBefore, String>() {
@@ -283,9 +276,6 @@ public class SimpleConverterFactory extends Converter.Factory {
                 }, responseInfo.beforeParser, jsonStr);
 
             }
-
-            Log.out("jsonStr--3=" + jsonStr);
-
 
             if (responseInfo.customParser != null && responseInfo.customParser.size() > 0) {
                 T customParseData = ChainUtil.doChain(false, new ChainUtil.Invoker<T, InterpreterParserCustom, String>() {

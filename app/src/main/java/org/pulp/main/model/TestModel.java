@@ -1,4 +1,4 @@
-package org.pulp.main;
+package org.pulp.main.model;
 
 import org.pulp.fastapi.model.IModel;
 

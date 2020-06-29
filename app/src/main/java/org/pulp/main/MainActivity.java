@@ -10,8 +10,12 @@ import android.view.View;
 import android.widget.TextView;
 
 import org.pulp.fastapi.API;
+import org.pulp.fastapi.extension.SimpleListObservable;
 import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.model.Str;
+import org.pulp.main.model.ListModel;
+import org.pulp.main.model.TestModel;
+import org.pulp.main.model.UrlKey;
 
 import java.net.URL;
 
@@ -32,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
                 new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         Manifest.permission.READ_EXTERNAL_STORAGE,
                         Manifest.permission.INTERNET
-                },0);
+                }, 0);
     }
 
 
@@ -126,6 +130,52 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //分页-------------------------------------------------------------------------------------------
+    SimpleListObservable<ListModel> data = API.get(this, TestAPI.class).getListData();
+
+    public void testGetListData(View view) {
+        data.nextPage().success(str -> {
+            output("on success callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(str + "\n");
+            output("-----------------");
+        }).faild(error -> {
+            output("on error callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(error.getMsg() + "\n");
+            output("-----------------\n");
+        });
+
+    }
+
+    //重置
+    public void testGetListData_Reset(View view) {
+        clear();
+        data.reset();
+    }
+
+
+    //测试子线程发起请求
+    public void testGetData_NotMainThread(View view) {
+        new Thread(() -> {
+            SimpleObservable<TestModel> data = API.get(this, TestAPI.class).getDataConvertPath();
+            data.success(str -> {
+                output("on success callback:\n");
+                output(((TextView) view).getText() + "\n");
+                output(str + "\n");
+                output("-----------------");
+            }).faild(error -> {
+                output("on error callback:\n");
+                output(((TextView) view).getText() + "\n");
+                output(error.getMsg() + "\n");
+                output("-----------------");
+            });
+        }).start();
+
+    }
+
+
+    //--------------------------------------------------
     public void clear() {
         tv_content.setText("");
     }
@@ -133,4 +183,5 @@ public class MainActivity extends AppCompatActivity {
     public void output(@Nullable Object txt) {
         tv_content.append(txt == null ? "null" : txt.toString());
     }
+
 }

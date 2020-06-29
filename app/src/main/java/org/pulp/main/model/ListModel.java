@@ -1,4 +1,4 @@
-package org.pulp.main;
+package org.pulp.main.model;
 
 import org.pulp.fastapi.model.IModel;
 
@@ -28,5 +28,15 @@ public class ListModel implements IModel {
 
     public int getPage_count() {
         return page_count;
+    }
+
+    @Override
+    public String toString() {
+        return "ListModel{" +
+                "page_next=" + page_next +
+                ", page_previous=" + page_previous +
+                ", page=" + page +
+                ", page_count=" + page_count +
+                '}';
     }
 }

@@ -5,14 +5,20 @@ public class Error {
     public static String SYMBOL = "ERROR_SYMBOL";
 
     public static final int STATIC_URL_TRICK = -10000;
-    public static final int ERR_CRASH = -9999;
-    public static final int ERR_NO_MORE_DATA = -9998;
-    public static final int ERR_NO_NET = -9997;
-    public static final int ERR_PARSE_CLASS = -9996;
-    public static final int ERR_PARSE_ERROR = -9995;
-    public static final int ERR_PARSE_BEAN = -9994;
-    public static final int ERR_PARSE_CUSTOM = -9993;
-    public static final int ERR_ALL_URLS_INVALID = -9992;
+
+    public static final int ERR_CRASH = -9000;
+    public static final int ERR_ALL_URLS_INVALID = -9001;
+    public static final int ERR_NO_NET = -9002;
+
+    public static final int ERR_NO_MORE_DATA = -8000;
+    public static final int ERR_NO_PREVIOUS_DATA = -8001;
+    public static final int ERR_NO_PAGE_DATA = -8002;
+    public static final int ERR_PAGE_CONDITION_TYPE_BAD = -8003;
+
+    public static final int ERR_PARSE_ERROR = -7000;
+    public static final int ERR_PARSE_BEAN = -7001;
+    public static final int ERR_PARSE_CUSTOM = -7002;
+
 
     private int code;
     private String msg;

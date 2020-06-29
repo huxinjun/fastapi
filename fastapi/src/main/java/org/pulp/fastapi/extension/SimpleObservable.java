@@ -1,6 +1,7 @@
 package org.pulp.fastapi.extension;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.widget.Toast;
@@ -103,7 +104,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private Map<String, String> extraParam;
     private boolean mIsToastError;
     private InternalObserver mInternalObserver;
-    private Handler mHandler = new Handler();
+    private Handler mHandler;
     private CacheControl cacheControl;//动态切换的缓存策略
     private String cacheControlStr;//动态切换的缓存策略,字符串形式
     private T currData;
@@ -121,6 +122,14 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         this.annotations = annotations;
         this.retrofit = retrofit;
         this.apiClass = apiClass;
+        initHandler();
+    }
+
+    private void initHandler() {
+        if (Looper.myLooper() == Looper.getMainLooper())
+            mHandler = new Handler();
+        else
+            mHandler = new Handler(Looper.getMainLooper());
     }
 
     class InternalObserver implements Observer<T> {

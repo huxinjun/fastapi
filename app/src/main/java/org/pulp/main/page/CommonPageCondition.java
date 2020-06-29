@@ -1,14 +1,14 @@
-package org.pulp.main;
+package org.pulp.main.page;
 
 
 import android.support.annotation.Nullable;
 
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.util.Log;
+import org.pulp.main.model.ListModel;
 
 import java.util.HashMap;
 import java.util.Map;
-
 
 
 /**
@@ -65,6 +65,9 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
 
     @Override
     public boolean hasMore(@Nullable T data) {
-        return true;
+        if (data == null)
+            return true;
+//        return data.getPage_next() > data.getPage();
+        return data.getPage_next() < 5;
     }
 }

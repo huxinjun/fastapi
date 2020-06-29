@@ -1,4 +1,4 @@
-package org.pulp.main;
+package org.pulp.main.parser;
 
 import android.text.TextUtils;
 
@@ -6,6 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.util.Log;
+import org.pulp.main.model.UrlKey;
 
 import java.util.Iterator;
 

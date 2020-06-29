@@ -123,11 +123,10 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                 parseOnErrorParseAnno(findAnnoByClass(annotations, OnErrorParse.class));
                 parseOnCustomParseAnno(findAnnoByClass(annotations, OnCustomParse.class));
                 parseOnAfterParseAnno(findAnnoByClass(annotations, OnAfterParse.class));
+                parsePageAnno(findAnnoByClass(annotations, Page.class), simpleObservable);
                 if (annotations != null && annotations.length > 0) {
                     for (Annotation annotation : annotations) {
-                        if (annotation instanceof Page) {
-                            parsePageAnno((Page) annotation, simpleObservable);
-                        } else if (annotation instanceof Param) {
+                        if (annotation instanceof Param) {
                             Map<String, String> paramMap = parseParamAnno((Param) annotation);
                             if (paramMap != null)
                                 annoParams.putAll(paramMap);
@@ -291,11 +290,32 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
 
     @SuppressWarnings("unchecked")
-    private void parsePageAnno(Page pageAnno, SimpleObservable<?> simpleObservable) {
-        Class<? extends PageCondition> value = pageAnno.value();
-        Log.out("adapt.Page.value=:" + value);
+    private void parsePageAnno(@Nullable Page pageAnno, SimpleObservable<?> simpleObservable) {
+        if (!(simpleObservable instanceof SimpleListObservable))
+            return;
         try {
-            PageCondition pageCondition = value.newInstance();
+            PageCondition pageCondition;
+            String from = "global setting";
+
+            pageCondition = Bridge.getSetting().onGetPageCondition();
+
+
+            Page classAnno = apiClass.getAnnotation(Page.class);
+            if (classAnno != null) {
+                Class<? extends PageCondition> value = classAnno.value();
+                pageCondition = value.newInstance();
+                from = "class";
+            }
+
+            if (pageAnno != null) {
+                Class<? extends PageCondition> value = pageAnno.value();
+                pageCondition = value.newInstance();
+                from = "method";
+            }
+
+            if (pageCondition == null)
+                return;
+            Log.out("use " + from + " pageCondition:" + pageCondition);
             ((SimpleListObservable) simpleObservable).pageCondition(pageCondition);
         } catch (InstantiationException e) {
             e.printStackTrace();

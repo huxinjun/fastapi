@@ -1,13 +1,22 @@
 package org.pulp.fastapi.extension;
 
 
+import android.text.TextUtils;
+
+import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.i.CachePolicy;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.Map;
 
 import io.reactivex.Observable;
 import okhttp3.CacheControl;
@@ -41,8 +50,24 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         if (mPageCondition == null) {
             throw new RuntimeException("not found page condition declare");
         }
-        setExtraParam(mPageCondition.prePage(getCurrData()));
-        subscribeIfNeed();
+        runInBox(new Runnable() {
+            @Override
+            public void run() {
+                Map<String, String> param = mPageCondition.prePage(getCurrData());
+                if (param == null) {
+                    abortOnce();
+                    Error error = new Error();
+                    error.setCode(Error.ERR_NO_PREVIOUS_DATA);
+                    error.setMsg(generateErrorMsg(error.getCode()));
+                    Faild faildCallBack = getFaildCallBack();
+                    if (faildCallBack != null)
+                        faildCallBack.onFaild(error);
+                    return;
+                }
+                setExtraParam(param);
+                subscribeIfNeed();
+            }
+        });
         return this;
     }
 
@@ -54,51 +79,79 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         if (mPageCondition == null) {
             throw new RuntimeException("not found page condition declare");
         }
-        if (!mPageCondition.hasMore(getCurrData())) {
-            abortOnce();
-            getHandler().post(new Runnable() {
-                @Override
-                public void run() {
+        runInBox(new Runnable() {
+            @Override
+            public void run() {
+                if (!mPageCondition.hasMore(getCurrData())) {
+                    abortOnce();
                     Error error = new Error();
                     error.setCode(Error.ERR_NO_MORE_DATA);
-                    error.setMsg("no more data");
+                    error.setMsg(generateErrorMsg(error.getCode()));
                     Faild faildCallBack = getFaildCallBack();
                     if (faildCallBack != null)
                         faildCallBack.onFaild(error);
+                    return;
                 }
-            });
-            return this;
-        }
-        setExtraParam(mPageCondition.nextPage(getCurrData()));
-        subscribeIfNeed();
-        return this;
-    }
-
-    /**
-     * 某一页并订阅
-     */
-    public SimpleObservable<T> page(int page) {
-        setPage(page);
-        subscribeIfNeed();
+                setExtraParam(mPageCondition.nextPage(getCurrData()));
+                subscribeIfNeed();
+            }
+        });
         return this;
     }
 
     /**
      * 某一页
      */
-    @SuppressWarnings({"UnusedReturnValue", "WeakerAccess"})
-    public SimpleObservable<T> setPage(int page) {
+    public SimpleObservable<T> page(final int page) {
         if (mPageCondition == null) {
             throw new RuntimeException("not found page condition declare");
         }
-        setExtraParam(mPageCondition.page(getCurrData(), page));
+        runInBox(new Runnable() {
+            @Override
+            public void run() {
+                Map<String, String> param = mPageCondition.page(getCurrData(), page);
+                if (param == null) {
+                    abortOnce();
+                    Error error = new Error();
+                    error.setCode(Error.ERR_NO_PAGE_DATA);
+                    error.setMsg(generateErrorMsg(error.getCode()));
+                    Faild faildCallBack = getFaildCallBack();
+                    if (faildCallBack != null)
+                        faildCallBack.onFaild(error);
+                    return;
+                }
+                setExtraParam(mPageCondition.page(getCurrData(), page));
+                subscribeIfNeed();
+            }
+        });
         return this;
     }
 
+    //catch class cast exception
+    private void runInBox(Runnable run) {
+        try {
+            if (run != null)
+                run.run();
+        } catch (final ClassCastException e) {
+            abortOnce();
+            getHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    Error error = new Error();
+                    error.setCode(Error.ERR_PAGE_CONDITION_TYPE_BAD);
+                    error.setMsg("check your page condition(" + mPageCondition.getClass().getName() + "),because " + e.getMessage());
+                    Faild faildCallBack = getFaildCallBack();
+                    if (faildCallBack != null)
+                        faildCallBack.onFaild(error);
+                }
+            });
+        }
+    }
+
+
     public SimpleListObservable<T> reset() {
-        setExtraParam(null);
         setCurrData(null);
-        page(0);
+        setExtraParam(mPageCondition.nextPage(null));
         return this;
     }
 
@@ -162,5 +215,21 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         if (isFirstSet)
             setExtraParam(mPageCondition.nextPage(getCurrData()));
         return this;
+    }
+
+
+    private String generateErrorMsg(int code) {
+        String codeToString = Bridge.getSetting().onErrorCode2String(code);
+        if (!TextUtils.isEmpty(codeToString))
+            return codeToString;
+        switch (code) {
+            case Error.ERR_NO_PAGE_DATA:
+                return "no page data";
+            case Error.ERR_NO_PREVIOUS_DATA:
+                return "no previous data";
+            case Error.ERR_NO_MORE_DATA:
+                return "no more data";
+        }
+        return null;
     }
 }

@@ -1,4 +1,4 @@
-package org.pulp.main;
+package org.pulp.main.api;
 
 import android.content.Context;
 import android.os.Environment;
@@ -11,9 +11,11 @@ import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
+import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.i.PathConverter;
-import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.Log;
+import org.pulp.main.model.UrlKey;
+import org.pulp.main.page.CommonPageCondition;
 
 import java.io.File;
 import java.util.HashMap;
@@ -146,6 +148,12 @@ public class ApiSetting implements Setting {
         return null;
     }
 
+    @Nullable
+    @Override
+    public PageCondition onGetPageCondition() {
+        return new CommonPageCondition();
+    }
+
     @Override
     public int onGetConnectTimeout() {
         return 1000;
@@ -154,5 +162,11 @@ public class ApiSetting implements Setting {
     @Override
     public int onGetReadTimeout() {
         return 1000;
+    }
+
+    @Nullable
+    @Override
+    public String onErrorCode2String(int code) {
+        return null;
     }
 }

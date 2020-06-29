@@ -139,14 +139,18 @@ public class API {
             String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
             String extra_anno_parser_after = request.header(InterpreterParserAfter.HEADER_FLAG);
             Response response = chain.proceed(request);
+            StringBuilder builder = new StringBuilder();
+
             if (!TextUtils.isEmpty(extra_anno_parser_before))
-                response = setExtraTag(response, InterpreterParseBefore.HEADER_FLAG, extra_anno_parser_before);
+                builder.append(InterpreterParseBefore.HEADER_FLAG).append("=").append(extra_anno_parser_before).append(SimpleConverterFactory.TAG_EXTRA);
             if (!TextUtils.isEmpty(extra_anno_parser_error))
-                response = setExtraTag(response, InterpreterParseError.HEADER_FLAG, extra_anno_parser_error);
+                builder.append(InterpreterParseError.HEADER_FLAG).append("=").append(extra_anno_parser_error).append(SimpleConverterFactory.TAG_EXTRA);
             if (!TextUtils.isEmpty(extra_anno_parser_custom))
-                response = setExtraTag(response, InterpreterParserCustom.HEADER_FLAG, extra_anno_parser_custom);
+                builder.append(InterpreterParserCustom.HEADER_FLAG).append("=").append(extra_anno_parser_custom).append(SimpleConverterFactory.TAG_EXTRA);
             if (!TextUtils.isEmpty(extra_anno_parser_after))
-                response = setExtraTag(response, InterpreterParserAfter.HEADER_FLAG, extra_anno_parser_after);
+                builder.append(InterpreterParserAfter.HEADER_FLAG).append("=").append(extra_anno_parser_after).append(SimpleConverterFactory.TAG_EXTRA);
+            if (!TextUtils.isEmpty(builder))
+                response = setExtraTag(response, builder.toString());
             return response;
         }
     };
@@ -231,10 +235,6 @@ public class API {
         return setExtraTag(response, "Cache", "true");
     }
 
-    /**
-     * 为了使实体知道自己是否是缓存中的数据
-     * 在body中添加cache标记
-     */
     private static Response setExtraTag(Response response, String key, String value) {
         if (response == null || response.body() == null)
             return response;
@@ -243,6 +243,20 @@ public class API {
         try {
             return response.newBuilder().body(ResponseBody.create(response.body().contentType(),
                     key + "=" + value + SimpleConverterFactory.TAG_EXTRA + response.body().string())).build();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return response;
+    }
+
+    private static Response setExtraTag(Response response, String tag) {
+        if (response == null || response.body() == null)
+            return response;
+        if (TextUtils.isEmpty(tag))
+            return response;
+        try {
+            return response.newBuilder().body(ResponseBody.create(response.body().contentType(), tag + response.body().string())).build();
         } catch (IOException e) {
             e.printStackTrace();
         }
