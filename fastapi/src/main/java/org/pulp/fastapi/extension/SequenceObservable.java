@@ -43,7 +43,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
         setCurrData(null);
         super.success(new Success<T>() {
             @Override
-            public void onSuccess(T data) {
+            public void onSuccess(@NonNull T data) {
                 dispose();
             }
         });
@@ -63,7 +63,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     public SequenceObservable<T> success(final Success<T> success) {
         super.success(new Success<T>() {
             @Override
-            public void onSuccess(T data) {
+            public void onSuccess(@NonNull T data) {
                 if (success != null)
                     success.onSuccess(data);
                 dispose();

@@ -65,7 +65,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
      * Created by xinjun on 2019/12/9 11:15
      */
     public interface Success<T> {
-        void onSuccess(T data);
+        void onSuccess(@NonNull T data);
     }
 
     /**
