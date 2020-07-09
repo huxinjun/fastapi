@@ -168,8 +168,11 @@ inline fun RecyclerView.data(init: () -> List<Any>) {
     data(false, init)
 }
 
-
 inline fun RecyclerView.data(append: Boolean, init: () -> List<Any>) {
+    data(false, true, init)
+}
+
+inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<Any>) {
     if (adapter == null) {
         setTag(2.toDouble().pow(30.toDouble()).toInt(), init())
         return
@@ -179,7 +182,8 @@ inline fun RecyclerView.data(append: Boolean, init: () -> List<Any>) {
     with(adpt) {
         if (!append) segmentSets.data.clear()
         segmentSets.data.addAll(init())
-        notifyDataSetChanged()
+        if (notify)
+            notifyDataSetChanged()
     }
 
 }
