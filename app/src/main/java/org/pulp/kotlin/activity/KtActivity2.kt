@@ -27,10 +27,15 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
         setContentView(createView)
 
 
+
+
         mf = finder(MyFinder(createView)) {
 
+            rcv.safe {
+                data { DataTest().arr }
+            }
+
             btn.safe {
-                text = "dwdw"
                 setOnClickListener(this@KtActivity2)
             }
 
@@ -70,12 +75,9 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }
-
         }
 
-        mf?.rcv.safe {
-            data { DataTest().arr }
-        }
+
     }
 
     override fun onClick(v: View?) {
@@ -88,7 +90,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                 }
             }
             footer(0).safe {
-//                finder(this) {
+                //                finder(this) {
 //                    find<TextView>(R.id.tv_txt) {
 //                        text = "this is new footer text"
 //                    }

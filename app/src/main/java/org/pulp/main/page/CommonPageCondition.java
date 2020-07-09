@@ -64,7 +64,7 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
     }
 
     @Override
-    public boolean hasMore(@Nullable T data) {
+    public boolean hasMore(@Nullable T data, MoreType moreType) {
         if (data == null)
             return true;
 //        return data.getPage_next() > data.getPage();

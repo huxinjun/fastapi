@@ -24,7 +24,7 @@ public class BadCondition implements PageCondition<Object> {
     }
 
     @Override
-    public boolean hasMore(@Nullable Object data) {
+    public boolean hasMore(@Nullable Object data, MoreType moreType) {
         Log.out("hasMore.data=" + data);
         return false;
     }

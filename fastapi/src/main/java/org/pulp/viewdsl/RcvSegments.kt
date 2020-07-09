@@ -4,6 +4,7 @@ import android.content.Context
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
+import kotlin.math.pow
 
 /**
  * type info,include pos and data
@@ -129,6 +130,10 @@ inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
     this.adapter = RecyclerViewAdpt<Any> {
         val set = SegmentSets(context)
         set.init()
+        val data = getTag(2.toDouble().pow(30.toDouble()).toInt())
+        @Suppress("UNCHECKED_CAST")
+        if (data is MutableList<*>)
+            set.data = data as MutableList<Any>
         post {
             layoutManager?.run {
                 if (this is GridLayoutManager) {
@@ -163,9 +168,12 @@ inline fun RecyclerView.data(init: () -> List<Any>) {
     data(false, init)
 }
 
+
 inline fun RecyclerView.data(append: Boolean, init: () -> List<Any>) {
-    if (adapter == null)
-        throw RuntimeException("data invoke must after templete{...}")
+    if (adapter == null) {
+        setTag(2.toDouble().pow(30.toDouble()).toInt(), init())
+        return
+    }
     @Suppress("UNCHECKED_CAST")
     val adpt = adapter as RecyclerViewAdpt<*>
     with(adpt) {
