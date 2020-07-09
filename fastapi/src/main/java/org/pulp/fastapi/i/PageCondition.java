@@ -10,6 +10,11 @@ import java.util.Map;
  * Created by xinjun on 2019/12/9 11:13
  */
 public interface PageCondition<T> {
+    enum MoreType {
+        NextPage,
+        PrePAGE
+    }
+
     /**
      * 下一页数据
      *
@@ -34,5 +39,5 @@ public interface PageCondition<T> {
     /**
      * 是否有下一页
      */
-    boolean hasMore(@Nullable T data);
+    boolean hasMore(@Nullable T data, MoreType moreType);
 }

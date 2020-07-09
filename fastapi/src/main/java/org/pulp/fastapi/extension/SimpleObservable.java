@@ -176,7 +176,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 error = new Error();
                 if (!CommonUtil.isConnected(Bridge.getContext())) {
                     error.setCode(Error.ERR_NO_NET);
-                    error.setMsg("no network");
+                    error.setMsg(Error.generateErrorMsg(Error.ERR_NO_NET));
                 } else {
                     error.setCode(Error.ERR_CRASH);
                     error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);

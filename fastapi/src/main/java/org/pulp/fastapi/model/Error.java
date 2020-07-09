@@ -1,6 +1,10 @@
 package org.pulp.fastapi.model;
 
 
+import android.text.TextUtils;
+
+import org.pulp.fastapi.Bridge;
+
 public class Error {
     public static String SYMBOL = "ERROR_SYMBOL";
 
@@ -37,6 +41,23 @@ public class Error {
             error.tag = split[3];
         }
         return error;
+    }
+
+    public static String generateErrorMsg(int code) {
+        String codeToString = Bridge.getSetting().onErrorCode2String(code);
+        if (!TextUtils.isEmpty(codeToString))
+            return codeToString;
+        switch (code) {
+            case Error.ERR_NO_PAGE_DATA:
+                return "no page data";
+            case Error.ERR_NO_PREVIOUS_DATA:
+                return "no previous data";
+            case Error.ERR_NO_MORE_DATA:
+                return "no more data";
+            case Error.ERR_NO_NET:
+                return "no network";
+        }
+        return null;
     }
 
 

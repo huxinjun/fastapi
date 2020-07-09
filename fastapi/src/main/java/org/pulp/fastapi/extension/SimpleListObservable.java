@@ -53,18 +53,17 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         runInBox(new Runnable() {
             @Override
             public void run() {
-                Map<String, String> param = mPageCondition.prePage(getCurrData());
-                if (param == null) {
+                if (!mPageCondition.hasMore(getCurrData(), PageCondition.MoreType.PrePAGE)) {
                     abortOnce();
                     Error error = new Error();
                     error.setCode(Error.ERR_NO_PREVIOUS_DATA);
-                    error.setMsg(generateErrorMsg(error.getCode()));
+                    error.setMsg(Error.generateErrorMsg(error.getCode()));
                     Faild faildCallBack = getFaildCallBack();
                     if (faildCallBack != null)
                         faildCallBack.onFaild(error);
                     return;
                 }
-                setExtraParam(param);
+                setExtraParam(mPageCondition.prePage(getCurrData()));
                 subscribeIfNeed();
             }
         });
@@ -82,11 +81,11 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getCurrData())) {
+                if (!mPageCondition.hasMore(getCurrData(), PageCondition.MoreType.NextPage)) {
                     abortOnce();
                     Error error = new Error();
                     error.setCode(Error.ERR_NO_MORE_DATA);
-                    error.setMsg(generateErrorMsg(error.getCode()));
+                    error.setMsg(Error.generateErrorMsg(error.getCode()));
                     Faild faildCallBack = getFaildCallBack();
                     if (faildCallBack != null)
                         faildCallBack.onFaild(error);
@@ -114,7 +113,7 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
                     abortOnce();
                     Error error = new Error();
                     error.setCode(Error.ERR_NO_PAGE_DATA);
-                    error.setMsg(generateErrorMsg(error.getCode()));
+                    error.setMsg(Error.generateErrorMsg(error.getCode()));
                     Faild faildCallBack = getFaildCallBack();
                     if (faildCallBack != null)
                         faildCallBack.onFaild(error);
@@ -218,18 +217,5 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
     }
 
 
-    private String generateErrorMsg(int code) {
-        String codeToString = Bridge.getSetting().onErrorCode2String(code);
-        if (!TextUtils.isEmpty(codeToString))
-            return codeToString;
-        switch (code) {
-            case Error.ERR_NO_PAGE_DATA:
-                return "no page data";
-            case Error.ERR_NO_PREVIOUS_DATA:
-                return "no previous data";
-            case Error.ERR_NO_MORE_DATA:
-                return "no more data";
-        }
-        return null;
-    }
+
 }
