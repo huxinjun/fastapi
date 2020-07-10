@@ -164,13 +164,30 @@ inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
     }
 }
 
+fun RecyclerView.clear() {
+    data(false, true) { emptyList() }
+}
+
+fun RecyclerView.clearQuietly() {
+    data(false, false) { emptyList() }
+}
+
 inline fun RecyclerView.data(init: () -> List<Any>) {
-    data(false, init)
+    data(false, true, init)
+}
+
+inline fun RecyclerView.dataQuietly(init: () -> List<Any>) {
+    data(false, false, init)
 }
 
 inline fun RecyclerView.data(append: Boolean, init: () -> List<Any>) {
-    data(false, true, init)
+    data(append, true, init)
 }
+
+inline fun RecyclerView.dataQuietly(append: Boolean, init: () -> List<Any>) {
+    data(append, false, init)
+}
+
 
 inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<Any>) {
     if (adapter == null) {
@@ -182,8 +199,7 @@ inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<
     with(adpt) {
         if (!append) segmentSets.data.clear()
         segmentSets.data.addAll(init())
-        if (notify)
-            notifyDataSetChanged()
+        notifyDataSetChanged()
     }
 
 }
