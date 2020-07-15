@@ -17,12 +17,13 @@ public class Str implements IModel {
         this.isCache = isCache;
     }
 
+    public boolean isCache() {
+        return isCache;
+    }
+
     @NonNull
     @Override
     public String toString() {
-        return "Str{" +
-                "isCache=" + isCache +
-                ", content='" + content + '\'' +
-                '}';
+        return content;
     }
 }
