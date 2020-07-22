@@ -1,7 +1,6 @@
 package org.pulp.viewdsl
 
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +13,7 @@ class VH<T>(v: View) : RecyclerView.ViewHolder(v) {
 
     var item: View = v
     var mFinder = finder(item) {}
-    var itemSegment: Segment<T>? = null
+    var itemBaseSegment: BaseSegment<T, Any>? = null
 
     fun <T : View> get(id: Int): T {
         return mFinder.find(id)
@@ -77,7 +76,7 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
 
         val vh = VH<T>(view!!)
         @Suppress("UNCHECKED_CAST")
-        vh.itemSegment = segment as Segment<T>?
+        vh.itemBaseSegment = segment as BaseSegment<T, Any>?
         return vh
     }
 
@@ -86,13 +85,27 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
 
     @Suppress("UNCHECKED_CAST")
     override fun onBindViewHolder(holder: VH<T>, position: Int) {
-        holder.itemSegment?.bindCb?.let {
-            if (segmentSets.isHeader(position) || segmentSets.isFooter(position))
-                BindingContext(holder.mFinder, position, Any() as T).it()
-            else {
-                val itemData = segmentSets.data[position - segmentSets.headerSize()]
-                BindingContext(holder.mFinder, position, itemData as T).it()
+        holder.itemBaseSegment?.bindCb?.let {
+            val itemData: Any?
+            val dataNullable: Boolean
+            if (segmentSets.isHeader(position)) {
+                dataNullable = true
+                itemData = segmentSets.dataHeader[position]
+            } else if (segmentSets.isFooter(position)) {
+                dataNullable = true
+                itemData = segmentSets
+                        .dataFooter[position - segmentSets.headerSize() - segmentSets.data.size]
+            } else {
+                dataNullable = false
+                itemData = segmentSets.data[position - segmentSets.headerSize()]
             }
+
+            if (!dataNullable)
+                BindingContext(holder.mFinder, position, itemData as T).it()
+            else
+                BindingContextDataNullable(holder.mFinder, position, itemData as T).it()
+
+
         }
     }
 }

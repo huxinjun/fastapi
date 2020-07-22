@@ -35,9 +35,12 @@ class SegmentSets(var ctx: Context) {
 
 
     var data: MutableList<Any> = mutableListOf()
+    var dataHeader: MutableMap<Int, Any> = mutableMapOf()
+    var dataFooter: MutableMap<Int, Any> = mutableMapOf()
+
     var typeBlock: (TypeInfo.() -> Int)? = null
     var spanBlock: (Int.() -> Int)? = null
-    var mSegments = mutableMapOf<Int, Segment<*>>()
+    var mSegments = mutableMapOf<Int, BaseSegment<*,*>>()
 
 
     fun type(block: TypeInfo.() -> Int) {
@@ -53,13 +56,13 @@ class SegmentSets(var ctx: Context) {
     }
 
 
-    fun <T> header(func: () -> Segment<T>) {
+    fun <T> header(func: () -> SegmentDataNullable<T>) {
         if (headerTypeIndex <= footerInitIndex)
             throw RuntimeException("header max support count $headerCapacity")
         mSegments.put(headerTypeIndex--, func())
     }
 
-    fun <T> footer(func: () -> Segment<T>) {
+    fun <T> footer(func: () -> SegmentDataNullable<T>) {
         if (footerTypeIndex <= footerInitIndex - footerCapacity)
             throw RuntimeException("footer max support count $footerCapacity")
         @Suppress("UNCHECKED_CAST")
@@ -126,14 +129,20 @@ class SegmentSets(var ctx: Context) {
 }
 
 
+@Suppress("UNCHECKED_CAST")
 inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
     this.adapter = RecyclerViewAdpt<Any> {
         val set = SegmentSets(context)
         set.init()
         val data = getTag(2.toDouble().pow(30.toDouble()).toInt())
-        @Suppress("UNCHECKED_CAST")
+        val dataHeader = getTag(2.toDouble().pow(30.toDouble()).toInt() + 1)
+        val dataFooter = getTag(2.toDouble().pow(30.toDouble()).toInt() + 2)
         if (data is MutableList<*>)
             set.data = data as MutableList<Any>
+        if (dataHeader is MutableMap<*, *>)
+            set.dataHeader = dataHeader as MutableMap<Int, Any>
+        if (dataFooter is MutableMap<*, *>)
+            set.dataFooter = dataFooter as MutableMap<Int, Any>
         post {
             layoutManager?.run {
                 if (this is GridLayoutManager) {
@@ -199,6 +208,53 @@ inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<
     with(adpt) {
         if (!append) segmentSets.data.clear()
         segmentSets.data.addAll(init())
+        notifyDataSetChanged()
+    }
+
+}
+
+
+fun RecyclerView.dataHeader(pos: Int, data: Any) {
+    if (adapter == null) {
+        val tag = getTag(2.toDouble().pow(30.toDouble()).toInt() + 1)
+        if (tag == null) {
+            val mutableMapOf = mutableMapOf<Int, Any>()
+            mutableMapOf.put(pos, data)
+            setTag(2.toDouble().pow(30.toDouble()).toInt() + 1, mutableMapOf)
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            val map = tag as MutableMap<Int, Any>
+            map.put(pos, data)
+        }
+        return
+    }
+    @Suppress("UNCHECKED_CAST")
+    val adpt = adapter as RecyclerViewAdpt<*>
+    with(adpt) {
+        segmentSets.dataHeader.put(pos, data)
+        notifyDataSetChanged()
+    }
+
+}
+
+fun RecyclerView.dataFooter(pos: Int, data: Any) {
+    if (adapter == null) {
+        val tag = getTag(2.toDouble().pow(30.toDouble()).toInt() + 2)
+        if (tag == null) {
+            val mutableMapOf = mutableMapOf<Int, Any>()
+            mutableMapOf.put(pos, data)
+            setTag(2.toDouble().pow(30.toDouble()).toInt() + 2, mutableMapOf)
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            val map = tag as MutableMap<Int, Any>
+            map.put(pos, data)
+        }
+        return
+    }
+    @Suppress("UNCHECKED_CAST")
+    val adpt = adapter as RecyclerViewAdpt<*>
+    with(adpt) {
+        segmentSets.dataFooter.put(pos, data)
         notifyDataSetChanged()
     }
 

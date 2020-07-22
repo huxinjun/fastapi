@@ -41,6 +41,9 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
             rcv.safe {
 
+//                dataHeader(0,IT("测试header填充数据","before templete"))
+                dataFooter(0,IT("测试footer填充数据","before templete"))
+
                 templete {
 
                     type {
@@ -73,7 +76,13 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     footer {
                         SegFooter(ctx)
                     }
+                    footer {
+                        SegFooter(ctx)
+                    }
                 }
+
+                dataHeader(1,IT("测试header填充数据","after templete"))
+                dataFooter(1,IT("测试footer填充数据","after templete"))
             }
         }
 
@@ -111,13 +120,13 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
 }
 
-class SegHeader1(ctx: Context) : Segment<IT>() {
+class SegHeader1(ctx: Context) : SegmentDataNullable<IT>() {
     init {
         layout(R.layout.layout1)
         bind {
             finder.run {
                 find<TextView>(R.id.tv_txt) {
-                    text = "this is header 1"
+                    text = "${data?.name}:${data?.value}"
                 }
 
                 find<RecyclerView>(R.id.rcv_inner) {
@@ -155,13 +164,13 @@ class SegHeader1Item(ctx: Context) : Segment<Any>() {
     }
 }
 
-class SegHeader2(ctx: Context) : Segment<IT>() {
+class SegHeader2(ctx: Context) : SegmentDataNullable<IT>() {
     init {
         layout(R.layout.layout1)
         bind {
             finder.run {
                 find<TextView>(R.id.tv_txt) {
-                    text = "this is header 2"
+                    text = "${data?.name}:${data?.value}"
                 }
 
                 find<RecyclerView>(R.id.rcv_inner) {
@@ -173,13 +182,13 @@ class SegHeader2(ctx: Context) : Segment<IT>() {
     }
 }
 
-class SegFooter(ctx: Context) : Segment<IT>() {
+class SegFooter(ctx: Context) : SegmentDataNullable<IT>() {
     init {
         layout(R.layout.layout1)
         bind {
             finder.run {
                 find<TextView>(R.id.tv_txt) {
-                    text = "this is footer"
+                    text = "${data?.name}:${data?.value}"
                 }
 
                 find<RecyclerView>(R.id.rcv_inner) {
