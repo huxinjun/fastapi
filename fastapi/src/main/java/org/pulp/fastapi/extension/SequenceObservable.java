@@ -104,7 +104,8 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
             Error error = new Error();
             error.setCode(Error.ERR_ALL_URLS_INVALID);
             error.setMsg("all path is unreachable");
-            this.faild.onFaild(error);
+            if (this.faild != null)
+                this.faild.onFaild(error);
             dispose();
             return;
         }
