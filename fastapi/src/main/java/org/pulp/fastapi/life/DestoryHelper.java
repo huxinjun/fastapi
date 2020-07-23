@@ -14,31 +14,31 @@ import java.util.WeakHashMap;
  */
 public class DestoryHelper {
 
-    private static Map<Integer, Set<DestoryWatcher.DestoryListener>> listeners = new WeakHashMap<>();
+    private static Map<Object, Set<DestoryWatcher.DestoryListener>> listeners = new WeakHashMap<>();
 
     static void add(Object fromObj, DestoryWatcher.DestoryListener listener) {
         if (fromObj == null)
             return;
-        Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj.hashCode());
+        Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj);
         if (destoryListeners == null) {
             destoryListeners = new HashSet<>();
-            listeners.put(fromObj.hashCode(), destoryListeners);
+            listeners.put(fromObj, destoryListeners);
         }
-        listeners.get(fromObj.hashCode()).add(listener);
-        Log.out("set.watcher_size=" + listeners.size() + ",listener_size=" + destoryListeners.size() + ",fromObj=" + fromObj);
+        listeners.get(fromObj).add(listener);
+        Log.out("add.watcher_size=" + listeners.size() + ",listener_size=" + destoryListeners.size() + ",fromObj=" + fromObj);
     }
 
     static void notify(Object fromObj) {
         if (fromObj == null)
             return;
-        Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj.hashCode());
+        Set<DestoryWatcher.DestoryListener> destoryListeners = listeners.get(fromObj);
         if (destoryListeners == null || destoryListeners.size() == 0)
             return;
-        Log.out("notify.watcher_size=" + listeners.size() + ",listener_size=" + destoryListeners.size() + ",fromObj=" + fromObj);
         for (DestoryWatcher.DestoryListener li : destoryListeners)
             li.onDestory();
         destoryListeners.clear();
-        listeners.remove(fromObj.hashCode());
+        listeners.remove(fromObj);
+        Log.out("notify.watcher_size=" + listeners.size() + ",listener_size=" + destoryListeners.size() + ",fromObj=" + fromObj);
     }
 
 }

@@ -54,6 +54,19 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                         }
                     }
 
+                    header{
+                        segmentDataNullable<Any> {
+
+
+                        }
+                    }
+                    item {
+                        segment<Any> {
+
+                        }
+
+                    }
+
                     header {
                         SegHeader1(ctx)
                     }

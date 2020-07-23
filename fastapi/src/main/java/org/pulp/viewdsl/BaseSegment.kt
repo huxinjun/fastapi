@@ -63,7 +63,7 @@ fun <T> segment(func: Segment<T>.() -> Unit): Segment<T> {
     return segment
 }
 
-fun <T> segment(func: SegmentDataNullable<T>.() -> Unit): SegmentDataNullable<T> {
+fun <T> segmentDataNullable(func: SegmentDataNullable<T>.() -> Unit): SegmentDataNullable<T> {
     val segment = SegmentDataNullable<T>()
     segment.func()
     return segment
