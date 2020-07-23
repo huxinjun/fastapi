@@ -3,11 +3,13 @@ package org.pulp.fastapi.factory;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Base64;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.pulp.fastapi.Bridge;
+import org.pulp.fastapi.extension.SimpleObservable;
 import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.InterpreterParserAfter;
@@ -52,6 +54,8 @@ public class SimpleConverterFactory extends Converter.Factory {
         List<InterpreterParseError> errorParser;
         List<InterpreterParserCustom> customParser;
         List<InterpreterParserAfter> afterParser;
+        String timeLogFlag = null;
+        long lastTime = 0;
 
         ResponseInfo() {
         }
@@ -160,6 +164,13 @@ public class SimpleConverterFactory extends Converter.Factory {
                                     info.afterParser.add((InterpreterParserAfter) o);
                             }
                             break;
+                        case SimpleObservable.TIME_HEADER_FLAG:
+                            String[] time = v.split(":");
+                            if (time.length == 2) {
+                                info.timeLogFlag = new String(Base64.decode(time[0].replace("!","="),Base64.DEFAULT));
+                                info.lastTime = Long.parseLong(time[1]);
+                            }
+                            break;
                     }
                 } catch (IllegalAccessException e) {
                     throw new IOException(e);
@@ -217,6 +228,7 @@ public class SimpleConverterFactory extends Converter.Factory {
             ResponseInfo responseContent = getResponseContent(value, String.class);
             Str str = new Str(responseContent.json);
             str.setCache(responseContent.isCache);
+            logTimeIfNeed(responseContent, "requesting");
             return str;
         }
     }
@@ -238,6 +250,8 @@ public class SimpleConverterFactory extends Converter.Factory {
             ResponseInfo responseInfo = getResponseContent(value, (Class) type);
             String jsonStr = responseInfo.json;
 
+            logTimeIfNeed(responseInfo, "requesting");
+
             if (TextUtils.isEmpty(jsonStr))
                 return null;
 
@@ -258,6 +272,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                 if (error != null)
                     CommonUtil.throwError(error);
             }
+            logTimeIfNeed(responseInfo, "custom error parse");
 
             if (responseInfo.beforeParser != null && responseInfo.beforeParser.size() > 0) {
                 jsonStr = ChainUtil.doChain(true, new ChainUtil.Invoker<String, InterpreterParseBefore, String>() {
@@ -276,6 +291,8 @@ public class SimpleConverterFactory extends Converter.Factory {
                 }, responseInfo.beforeParser, jsonStr);
 
             }
+
+            logTimeIfNeed(responseInfo, "modify json result");
 
             if (responseInfo.customParser != null && responseInfo.customParser.size() > 0) {
                 T customParseData = ChainUtil.doChain(false, new ChainUtil.Invoker<T, InterpreterParserCustom, String>() {
@@ -300,6 +317,8 @@ public class SimpleConverterFactory extends Converter.Factory {
 
             }
 
+            logTimeIfNeed(responseInfo, "custom parse");
+
             //frame work parse data
             Gson gson = gsonBuilder.create();
             T data = null;
@@ -308,6 +327,7 @@ public class SimpleConverterFactory extends Converter.Factory {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            logTimeIfNeed(responseInfo, "Gson parse");
             Log.out("parse:data=" + data);
             if (data == null) {
                 CommonUtil.throwError(Error.ERR_PARSE_BEAN, "parse error");
@@ -320,6 +340,7 @@ public class SimpleConverterFactory extends Converter.Factory {
             }
 
             callAfterParse(responseInfo.afterParser, data);
+            logTimeIfNeed(responseInfo, "after parse");
 
             return data;
         }
@@ -334,6 +355,20 @@ public class SimpleConverterFactory extends Converter.Factory {
                     after.onParseCompleted(data);
                 } catch (ClassCastException ignore) {
                 }
+    }
+
+
+    private long getCurrTime() {
+        return System.currentTimeMillis();
+    }
+
+    private void logTimeIfNeed(ResponseInfo info, String reason) {
+        if (!TextUtils.isEmpty(info.timeLogFlag)) {
+            long currTime = getCurrTime();
+            int useTime = (int) (currTime - info.lastTime);
+            info.lastTime = currTime;
+            Log.out(info.timeLogFlag + ":" + reason + "=" + useTime + "ms");
+        }
     }
 
 

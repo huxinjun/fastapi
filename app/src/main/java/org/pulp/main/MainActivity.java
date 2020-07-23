@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             output(((TextView) view).getText() + "\n");
             output(error.getMsg() + "\n");
             output("-----------------");
-        });
+        }).lookTimeUsed("hahaha");
     }
 
     public void testGetData_CacheUseAll(View view) {
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
             output(((TextView) view).getText() + "\n");
             output(error.getMsg() + "\n");
             output("-----------------\n");
-        });
+        }).lookTimeUsed("list time use---");
 
     }
 

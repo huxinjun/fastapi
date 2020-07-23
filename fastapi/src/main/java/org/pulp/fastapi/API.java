@@ -138,6 +138,7 @@ public class API {
             String extra_anno_parser_error = request.header(InterpreterParseError.HEADER_FLAG);
             String extra_anno_parser_custom = request.header(InterpreterParserCustom.HEADER_FLAG);
             String extra_anno_parser_after = request.header(InterpreterParserAfter.HEADER_FLAG);
+            String extra_time = request.header(SimpleObservable.TIME_HEADER_FLAG);
             Response response = chain.proceed(request);
             StringBuilder builder = new StringBuilder();
 
@@ -149,6 +150,8 @@ public class API {
                 builder.append(InterpreterParserCustom.HEADER_FLAG).append("=").append(extra_anno_parser_custom).append(SimpleConverterFactory.TAG_EXTRA);
             if (!TextUtils.isEmpty(extra_anno_parser_after))
                 builder.append(InterpreterParserAfter.HEADER_FLAG).append("=").append(extra_anno_parser_after).append(SimpleConverterFactory.TAG_EXTRA);
+            if (!TextUtils.isEmpty(extra_time))
+                builder.append(SimpleObservable.TIME_HEADER_FLAG).append("=").append(extra_time).append(SimpleConverterFactory.TAG_EXTRA);
             if (!TextUtils.isEmpty(builder))
                 response = setExtraTag(response, builder.toString());
             return response;

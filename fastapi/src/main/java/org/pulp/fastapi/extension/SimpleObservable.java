@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.widget.Toast;
 
 
@@ -94,6 +95,9 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         void onModify(Request.Builder builder, Map<String, String> params);
     }
 
+    public static final String TIME_HEADER_FLAG = "TimeUsed";
+    private String logTimeTag = null;
+
     private Type observableType;//api返回类型,用于支持cache use all
     private Annotation[] annotations;//api声明的注解,用于支持cache use all
     private Observable<T> upstream;
@@ -135,6 +139,9 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     class InternalObserver implements Observer<T> {
 
         private Observer<? super T> observer;
+        private String logTimeTag = null;
+        private long lastTime = getCurrTime();
+        private long startTime = lastTime;
 
         InternalObserver(Observer<? super T> observer) {
             this.observer = observer;
@@ -154,6 +161,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         public void onNext(T t) {
             if (isDisposed())
                 return;
+            lastTime = startTime;
+            logTimeIfNeed("total time used");
             Log.out("onNext.data=" + t);
             setCurrData(t);
             if (t != null) {
@@ -162,6 +171,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             }
             if (observer != null)
                 observer.onNext(t);
+
         }
 
         @Override
@@ -187,7 +197,6 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
             if (SimpleObservable.this.faild != null)
                 faild.onFaild(error);
-            assert error != null;
             if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
                 Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
             if (observer != null)
@@ -204,25 +213,66 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             if (observer != null)
                 observer.onComplete();
         }
+
+
+        private long getCurrTime() {
+            return System.currentTimeMillis();
+        }
+
+        private boolean isNeedLogTime() {
+            return !TextUtils.isEmpty(logTimeTag);
+        }
+
+        private void logTimeIfNeed(String reason) {
+            if (isNeedLogTime()) {
+                long currTime = getCurrTime();
+                int useTime = (int) (currTime - lastTime);
+                lastTime = currTime;
+                Log.out(logTimeTag + ":" + reason + "=" + useTime + "ms");
+            }
+        }
     }
 
 
     @Override
     public void runInIO() {
-        Log.out("RequestWatcher.runInIO=" + Thread.currentThread().getId());
+        Log.out("RequestWatcher.runInIO=" + Thread.currentThread().getId() + "---" + mInternalObserver);
+
+        mInternalObserver.logTimeIfNeed("create io thread");
+        final InternalObserver finalObserver = mInternalObserver;
+
+
         SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), new SimpleCallFactory.RequestWatcher() {
             @Override
             public Request onRequestCreated(Request request) {
                 Log.out("RequestWatcher.callback=" + Thread.currentThread().getId());
+
+                mInternalObserver.logTimeIfNeed("create request");
+
                 Request.Builder builder = request.newBuilder();
                 if (mRequestRebuilder != null)
                     mRequestRebuilder.onModify(builder, extraParam);
+
+                mInternalObserver.logTimeIfNeed("append request param");
+
+                //支持解析打印消耗时间的日志
+                if (mInternalObserver.isNeedLogTime()) {
+                    String flagb64 = Base64.encodeToString(mInternalObserver.logTimeTag.getBytes(), Base64.DEFAULT).trim().replace("=", "!");
+                    builder.addHeader(SimpleObservable.TIME_HEADER_FLAG, flagb64 + ":" + mInternalObserver.getCurrTime());
+                }
+
                 applyCacheControl(builder);
-                cacheUseAllSupport(builder, mInternalObserver);
+                mInternalObserver.logTimeIfNeed("applyCacheControl");
+
+
+                cacheUseAllSupport(builder, finalObserver);
+                mInternalObserver.logTimeIfNeed("cacheUseAllSupport");
+
                 return builder.build();
             }
         });
     }
+
 
     /**
      * 应用缓存策略
@@ -418,6 +468,17 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         return this;
     }
 
+    /**
+     * log api used time
+     *
+     * @param tag tag
+     * @return this
+     */
+    public SimpleObservable<T> lookTimeUsed(@NonNull String tag) {
+        this.logTimeTag = tag;
+        subscribeIfNeed();
+        return this;
+    }
 
     /**
      * set a success callback,then you can invoke refresh to subscribe to parent
@@ -478,9 +539,14 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         return this;
     }
 
+
     @Override
     protected void subscribeActual(Observer<? super T> observer) {
         mInternalObserver = new InternalObserver(observer);
+        mInternalObserver.logTimeTag = logTimeTag;
+        logTimeTag = null;
+        Log.out("RequestWatcher.subscribeActual=" + Thread.currentThread().getId() + "," + mInternalObserver);
+        mInternalObserver.logTimeIfNeed("create InternalObserver");
         try {
             upstream.subscribe(mInternalObserver);
         } catch (Throwable throwable) {
@@ -509,6 +575,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     public boolean isDisposed() {
         return atomicReference.get() == DisposableHelper.DISPOSED;
     }
+
 
     void setRequestRebuilder(RequestRebuilder mRequestRebuilder) {
         this.mRequestRebuilder = mRequestRebuilder;

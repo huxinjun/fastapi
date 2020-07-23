@@ -1,6 +1,7 @@
 package org.pulp.fastapi.extension;
 
 
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.pulp.fastapi.Bridge;
@@ -200,6 +201,10 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
     @Override
     public SimpleListObservable<T> toastError() {
         return (SimpleListObservable<T>) super.toastError();
+    }
+
+    public SimpleObservable<T> lookTimeUsed(@NonNull String tag) {
+        return (SimpleListObservable<T>) super.lookTimeUsed(tag);
     }
 
     /**
