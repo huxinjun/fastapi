@@ -8,7 +8,9 @@ import org.pulp.fastapi.Bridge;
 import org.pulp.fastapi.i.CachePolicy;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.model.Error;
+import org.pulp.fastapi.model.IListModel;
 import org.pulp.fastapi.model.IModel;
+import org.pulp.fastapi.util.Log;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -17,6 +19,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import io.reactivex.Observable;
@@ -27,19 +33,31 @@ import retrofit2.Retrofit;
  * 为SimpleObservable提供分页功能
  * Created by xinjun on 2019/12/4 16:38
  */
-public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> {
+public class SimpleListObservable<T extends IListModel> extends SimpleObservable<T> {
 
     SimpleListObservable(Observable<T> upstream, Type observableType, Annotation[] annotations, Retrofit retrofit, Class<?> apiClass) {
         super(upstream, observableType, annotations, retrofit, apiClass);
+        super.setSuccess(mSuccess);
     }
 
 
     private PageCondition<T> mPageCondition;
+    private Map<Integer, T> allDatas = new HashMap<>();
+    private Success<T> realSuccess;
+    private Success<T> mSuccess = new Success<T>() {
+        @Override
+        public void onSuccess(@NonNull T data) {
+            allDatas.put(data.onGetPageIndex(), data);
+            if (realSuccess != null)
+                realSuccess.onSuccess(data);
+        }
+    };
 
     @Override
     public SimpleListObservable<T> refresh() {
         setExtraParam(null);
         setCurrData(null);
+        allDatas.clear();
         page(0);
         return (SimpleListObservable<T>) super.refresh();
     }
@@ -54,17 +72,22 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getCurrData(), PageCondition.MoreType.PrePAGE)) {
+                if (!mPageCondition.hasMore(getDataForPre(), PageCondition.MoreType.PrePAGE)) {
                     abortOnce();
-                    Error error = new Error();
+                    final Error error = new Error();
                     error.setCode(Error.ERR_NO_PREVIOUS_DATA);
                     error.setMsg(Error.generateErrorMsg(error.getCode()));
-                    Faild faildCallBack = getFaildCallBack();
-                    if (faildCallBack != null)
-                        faildCallBack.onFaild(error);
+                    getHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Faild faildCallBack = getFaildCallBack();
+                            if (faildCallBack != null)
+                                faildCallBack.onFaild(error);
+                        }
+                    });
                     return;
                 }
-                setExtraParam(mPageCondition.prePage(getCurrData()));
+                setExtraParam(mPageCondition.prePage(getDataForPre()));
                 subscribeIfNeed();
             }
         });
@@ -82,17 +105,22 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getCurrData(), PageCondition.MoreType.NextPage)) {
+                if (!mPageCondition.hasMore(getDataForNext(), PageCondition.MoreType.NextPage)) {
                     abortOnce();
-                    Error error = new Error();
+                    final Error error = new Error();
                     error.setCode(Error.ERR_NO_MORE_DATA);
                     error.setMsg(Error.generateErrorMsg(error.getCode()));
-                    Faild faildCallBack = getFaildCallBack();
-                    if (faildCallBack != null)
-                        faildCallBack.onFaild(error);
+                    getHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Faild faildCallBack = getFaildCallBack();
+                            if (faildCallBack != null)
+                                faildCallBack.onFaild(error);
+                        }
+                    });
                     return;
                 }
-                setExtraParam(mPageCondition.nextPage(getCurrData()));
+                setExtraParam(mPageCondition.nextPage(getDataForNext()));
                 subscribeIfNeed();
             }
         });
@@ -112,12 +140,17 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
                 Map<String, String> param = mPageCondition.page(getCurrData(), page);
                 if (param == null) {
                     abortOnce();
-                    Error error = new Error();
+                    final Error error = new Error();
                     error.setCode(Error.ERR_NO_PAGE_DATA);
                     error.setMsg(Error.generateErrorMsg(error.getCode()));
-                    Faild faildCallBack = getFaildCallBack();
-                    if (faildCallBack != null)
-                        faildCallBack.onFaild(error);
+                    getHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Faild faildCallBack = getFaildCallBack();
+                            if (faildCallBack != null)
+                                faildCallBack.onFaild(error);
+                        }
+                    });
                     return;
                 }
                 setExtraParam(mPageCondition.page(getCurrData(), page));
@@ -137,12 +170,17 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
             getHandler().post(new Runnable() {
                 @Override
                 public void run() {
-                    Error error = new Error();
+                    final Error error = new Error();
                     error.setCode(Error.ERR_PAGE_CONDITION_TYPE_BAD);
                     error.setMsg("check your page condition(" + mPageCondition.getClass().getName() + "),because " + e.getMessage());
-                    Faild faildCallBack = getFaildCallBack();
-                    if (faildCallBack != null)
-                        faildCallBack.onFaild(error);
+                    getHandler().post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Faild faildCallBack = getFaildCallBack();
+                            if (faildCallBack != null)
+                                faildCallBack.onFaild(error);
+                        }
+                    });
                 }
             });
         }
@@ -151,6 +189,7 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
 
     public SimpleListObservable<T> reset() {
         setCurrData(null);
+        allDatas.clear();
         setExtraParam(mPageCondition.nextPage(null));
         return this;
     }
@@ -172,7 +211,8 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
 
     @Override
     public SimpleListObservable<T> success(Success<T> success) {
-        return (SimpleListObservable<T>) super.success(success);
+        realSuccess = success;
+        return (SimpleListObservable<T>) super.success(mSuccess);
     }
 
     @Override
@@ -217,10 +257,32 @@ public class SimpleListObservable<T extends IModel> extends SimpleObservable<T> 
         boolean isFirstSet = this.mPageCondition == null;
         this.mPageCondition = mPageCondition;
         if (isFirstSet)
-            setExtraParam(mPageCondition.nextPage(getCurrData()));
+            setExtraParam(mPageCondition.nextPage(getDataForNext()));
         return this;
     }
 
+
+    private T getDataForPre() {
+        Iterator<Integer> iterator = allDatas.keySet().iterator();
+        int minKey = Integer.MAX_VALUE;
+        while (iterator.hasNext()) {
+            Integer next = iterator.next();
+            minKey = next < minKey ? next : minKey;
+        }
+        Log.out("getDataForPre.minKey=" + minKey);
+        return allDatas.get(minKey);
+    }
+
+    private T getDataForNext() {
+        Iterator<Integer> iterator = allDatas.keySet().iterator();
+        int maxKey = Integer.MIN_VALUE;
+        while (iterator.hasNext()) {
+            Integer next = iterator.next();
+            maxKey = next > maxKey ? next : maxKey;
+        }
+        Log.out("getDataForNext.maxKey=" + maxKey);
+        return allDatas.get(maxKey);
+    }
 
 
 }

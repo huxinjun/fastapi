@@ -133,7 +133,22 @@ public class MainActivity extends AppCompatActivity {
     //分页-------------------------------------------------------------------------------------------
     SimpleListObservable<ListModel> data = API.get(this, TestAPI.class).getListData();
 
-    public void testGetListData(View view) {
+    public void testGetListDataPre(View view) {
+        data.prePage().success(str -> {
+            output("on success callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(str + "\n");
+            output("-----------------");
+        }).faild(error -> {
+            output("on error callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(error.getMsg() + "\n");
+            output("-----------------\n");
+        }).lookTimeUsed("list time use---");
+
+    }
+
+    public void testGetListDataNext(View view) {
         data.nextPage().success(str -> {
             output("on success callback:\n");
             output(((TextView) view).getText() + "\n");

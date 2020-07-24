@@ -77,8 +77,14 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:onClick="testGetListData"
-                    android:text="分页测试" />
+                    android:onClick="testGetListDataPre"
+                    android:text="分页测试上一页" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="testGetListDataNext"
+                    android:text="分页测试下一页" />
 
                 <Button
                     android:layout_width="wrap_content"

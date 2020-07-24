@@ -21,7 +21,7 @@ public interface PageCondition<T> {
      * @param data 当前数据
      * @return 要添加在请求中的参数
      */
-    Map<String, String> nextPage(@Nullable T data);
+    @Nullable Map<String, String> nextPage(@Nullable T data);
 
     /**
      * 上一页数据
@@ -29,12 +29,12 @@ public interface PageCondition<T> {
      * @param data 当前数据
      * @return 要添加在请求中的参数
      */
-    Map<String, String> prePage(@Nullable T data);
+    @Nullable Map<String, String> prePage(@Nullable T data);
 
     /**
      * 指定某一页数据
      */
-    Map<String, String> page(@Nullable T data, int page);
+    @Nullable Map<String, String> page(@Nullable T data, int page);
 
     /**
      * 是否有下一页

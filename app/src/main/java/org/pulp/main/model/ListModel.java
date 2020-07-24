@@ -1,8 +1,9 @@
 package org.pulp.main.model;
 
+import org.pulp.fastapi.model.IListModel;
 import org.pulp.fastapi.model.IModel;
 
-public class ListModel implements IModel {
+public class ListModel implements IListModel {
 
     private int page_next;
     private int page_previous;
@@ -38,5 +39,10 @@ public class ListModel implements IModel {
                 ", page=" + page +
                 ", page_count=" + page_count +
                 '}';
+    }
+
+    @Override
+    public int onGetPageIndex() {
+        return page;
     }
 }
