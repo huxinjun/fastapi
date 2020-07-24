@@ -54,18 +54,17 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                         }
                     }
 
-                    header{
-                        segmentDataNullable<Any> {
-
-
-                        }
-                    }
-                    item {
-                        segment<Any> {
-
-                        }
-
-                    }
+//                    header{
+//                        segmentDataNullable<Any> {
+//
+//                        }
+//                    }
+//                    item {
+//                        segment<Any> {
+//
+//                        }
+//
+//                    }
 
                     header {
                         SegHeader1(ctx)
@@ -107,7 +106,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
             header(0).safe {
                 finder(this) {
                     find<RecyclerView>(R.id.rcv_inner) {
-                        data { arrayOf("的测温", "费废物废物", "会议厅局医院").asList() }
+                        data(true,true,true) { arrayOf("的测温", "费废物废物", "会议厅局医院").asList() }
                     }
                 }
             }

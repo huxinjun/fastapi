@@ -40,7 +40,7 @@ class SegmentSets(var ctx: Context) {
 
     var typeBlock: (TypeInfo.() -> Int)? = null
     var spanBlock: (Int.() -> Int)? = null
-    var mSegments = mutableMapOf<Int, BaseSegment<*,*>>()
+    var mSegments = mutableMapOf<Int, BaseSegment<*, *>>()
 
 
     fun type(block: TypeInfo.() -> Int) {
@@ -197,8 +197,16 @@ inline fun RecyclerView.dataQuietly(append: Boolean, init: () -> List<Any>) {
     data(append, false, init)
 }
 
-
 inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<Any>) {
+    data(append, -1, notify, init)
+}
+
+inline fun RecyclerView.data(append: Boolean, appendHead: Boolean, notify: Boolean, init: () ->
+List<Any>) {
+    data(append, 0, notify, init)
+}
+
+inline fun RecyclerView.data(append: Boolean, appendPos: Int, notify: Boolean, init: () -> List<Any>) {
     if (adapter == null) {
         setTag(2.toDouble().pow(30.toDouble()).toInt(), init())
         return
@@ -207,8 +215,12 @@ inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<
     val adpt = adapter as RecyclerViewAdpt<*>
     with(adpt) {
         if (!append) segmentSets.data.clear()
-        segmentSets.data.addAll(init())
-        notifyDataSetChanged()
+        var insertPos = appendPos
+        if (appendPos < 0)
+            insertPos = segmentSets.data.size
+        segmentSets.data.addAll(insertPos, init())
+        if (notify)
+            notifyDataSetChanged()
     }
 
 }
