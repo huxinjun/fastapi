@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //分页-------------------------------------------------------------------------------------------
-    SimpleListObservable<ListModel> data = API.get(this, TestAPI.class).getListData();
+    SimpleListObservable<ListModel> data = API.get(this, TestAPI.class).getListData("method test param");
 
     public void testGetListDataPre(View view) {
         data.prePage().success(str -> {

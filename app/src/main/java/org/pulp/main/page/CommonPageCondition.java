@@ -60,6 +60,7 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
             {
                 put("page", String.valueOf(go));
                 put("count", String.valueOf(PAGE_COUNT));
+                put("testp", "page test param");
             }
         };
     }

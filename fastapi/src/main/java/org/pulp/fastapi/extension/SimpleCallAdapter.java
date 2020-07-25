@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,6 +174,16 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         //分页参数
                         if (extraParams != null)
                             params.putAll(extraParams);
+
+                        //移除原始参数中和追加参数重复的参数,比如Api接口方法上@Query申明了id
+                        //分页传入的参数也传了个id,结果会以分页参数为准
+                        Iterator<Map.Entry<String, String>> iterator = queryParams.entrySet().iterator();
+                        while (iterator.hasNext()){
+                            Map.Entry<String, String> next = iterator.next();
+                            if(params.containsKey(next.getKey()))
+                                iterator.remove();
+                        }
+
 
                         String newPath = finalPath;
                         String convertUrl = null;

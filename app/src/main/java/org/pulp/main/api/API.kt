@@ -65,6 +65,6 @@ interface TestAPI {
     @POST(UrlKey.HOT_TODAY_SELECTED)
 //    @Page(BadCondition::class)
     @OnBeforeParse(ListBeforeParser::class)
-    fun getListData(): SimpleListObservable<ListModel>
+    fun getListData(@Query("testp") p: String): SimpleListObservable<ListModel>
 }
 
