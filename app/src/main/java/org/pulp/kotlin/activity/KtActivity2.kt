@@ -42,7 +42,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
             rcv.safe {
 
 //                dataHeader(0,IT("测试header填充数据","before templete"))
-                dataFooter(0,IT("测试footer填充数据","before templete"))
+                dataFooter(0, IT("测试footer填充数据", "before templete"))
 
                 templete {
 
@@ -93,8 +93,8 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     }
                 }
 
-                dataHeader(1,IT("测试header填充数据","after templete"))
-                dataFooter(1,IT("测试footer填充数据","after templete"))
+                dataHeader(1, IT("测试header填充数据", "after templete"))
+                dataFooter(1, IT("测试footer填充数据", "after templete"))
             }
         }
 
@@ -106,7 +106,11 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
             header(0).safe {
                 finder(this) {
                     find<RecyclerView>(R.id.rcv_inner) {
-                        data(true,true,true) { arrayOf("的测温", "费废物废物", "会议厅局医院").asList() }
+                        data {
+
+                            clear()
+//                            arrayOf("的测温", "费废物废物", "会议厅局医院").asList()
+                        }
                     }
                 }
             }

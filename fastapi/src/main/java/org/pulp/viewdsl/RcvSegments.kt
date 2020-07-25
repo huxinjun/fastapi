@@ -173,56 +173,46 @@ inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
     }
 }
 
-fun RecyclerView.clear() {
-    data(false, true) { emptyList() }
-}
 
-fun RecyclerView.clearQuietly() {
-    data(false, false) { emptyList() }
-}
-
-inline fun RecyclerView.data(init: () -> List<Any>) {
-    data(false, true, init)
-}
-
-inline fun RecyclerView.dataQuietly(init: () -> List<Any>) {
-    data(false, false, init)
-}
-
-inline fun RecyclerView.data(append: Boolean, init: () -> List<Any>) {
-    data(append, true, init)
-}
-
-inline fun RecyclerView.dataQuietly(append: Boolean, init: () -> List<Any>) {
-    data(append, false, init)
-}
-
-inline fun RecyclerView.data(append: Boolean, notify: Boolean, init: () -> List<Any>) {
-    data(append, -1, notify, init)
-}
-
-inline fun RecyclerView.data(append: Boolean, appendHead: Boolean, notify: Boolean, init: () ->
+inline fun RecyclerView.data(init: Config.() ->
 List<Any>) {
-    data(append, 0, notify, init)
-}
-
-inline fun RecyclerView.data(append: Boolean, appendPos: Int, notify: Boolean, init: () -> List<Any>) {
+    val config = Config(false, false, -1, true)
+    if (config.appendPos >= 0)
+        config.append = true
+    val datas = config.init()
     if (adapter == null) {
-        setTag(2.toDouble().pow(30.toDouble()).toInt(), init())
+        setTag(2.toDouble().pow(30.toDouble()).toInt(), datas)
         return
     }
     @Suppress("UNCHECKED_CAST")
     val adpt = adapter as RecyclerViewAdpt<*>
     with(adpt) {
-        if (!append) segmentSets.data.clear()
-        var insertPos = appendPos
-        if (appendPos < 0)
+        if (!config.append) segmentSets.data.clear()
+        var insertPos = config.appendPos
+        if (config.appendPos < 0)
             insertPos = segmentSets.data.size
-        segmentSets.data.addAll(insertPos, init())
-        if (notify)
+        segmentSets.data.addAll(insertPos, datas)
+        if (config.notify)
             notifyDataSetChanged()
     }
 
+}
+
+/**
+ * set data config
+ * Created by xinjun on 2020/7/25 11:46 AM
+ */
+data class Config(var append: Boolean, var appendToHead: Boolean, var appendPos: Int, var notify:
+Boolean) {
+    /**
+     *清除数据
+     */
+    fun clear(): List<Any> {
+        append = false
+        appendToHead = false
+        appendPos = -1
+        return emptyList()
+    }
 }
 
 
