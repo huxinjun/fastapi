@@ -177,6 +177,8 @@ inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
 inline fun RecyclerView.data(init: Config.() ->
 List<Any>) {
     val config = Config(false, false, -1, true)
+    if (config.appendToHead)
+        config.appendPos = 0
     if (config.appendPos >= 0)
         config.append = true
     val datas = config.init()

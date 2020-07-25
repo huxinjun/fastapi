@@ -106,6 +106,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
             error.setMsg("all path is unreachable");
             if (this.faild != null)
                 this.faild.onFaild(error);
+            toastErrorIfNeed(error);
             dispose();
             return;
         }

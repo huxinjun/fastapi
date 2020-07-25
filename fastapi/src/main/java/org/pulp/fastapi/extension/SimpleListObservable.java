@@ -72,7 +72,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getDataForPre(), PageCondition.MoreType.PrePAGE)) {
+                if (!mPageCondition.hasMore(getDataForPre(), PageCondition.MoreType.PrePage)) {
                     abortOnce();
                     final Error error = new Error();
                     error.setCode(Error.ERR_NO_PREVIOUS_DATA);
@@ -83,6 +83,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                             Faild faildCallBack = getFaildCallBack();
                             if (faildCallBack != null)
                                 faildCallBack.onFaild(error);
+                            toastErrorIfNeed(error);
                         }
                     });
                     return;
@@ -116,6 +117,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                             Faild faildCallBack = getFaildCallBack();
                             if (faildCallBack != null)
                                 faildCallBack.onFaild(error);
+                            toastErrorIfNeed(error);
                         }
                     });
                     return;
@@ -149,6 +151,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                             Faild faildCallBack = getFaildCallBack();
                             if (faildCallBack != null)
                                 faildCallBack.onFaild(error);
+                            toastErrorIfNeed(error);
                         }
                     });
                     return;
@@ -179,6 +182,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                             Faild faildCallBack = getFaildCallBack();
                             if (faildCallBack != null)
                                 faildCallBack.onFaild(error);
+                            toastErrorIfNeed(error);
                         }
                     });
                 }

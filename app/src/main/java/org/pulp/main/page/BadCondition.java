@@ -1,5 +1,6 @@
 package org.pulp.main.page;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.pulp.fastapi.i.PageCondition;
@@ -24,7 +25,7 @@ public class BadCondition implements PageCondition<Object> {
     }
 
     @Override
-    public boolean hasMore(@Nullable Object data, MoreType moreType) {
+    public boolean hasMore(@Nullable Object data, @NonNull MoreType moreType) {
         Log.out("hasMore.data=" + data);
         return false;
     }

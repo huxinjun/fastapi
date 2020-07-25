@@ -197,8 +197,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
             if (SimpleObservable.this.faild != null)
                 faild.onFaild(error);
-            if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
-                Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
+            toastErrorIfNeed(error);
             if (observer != null)
                 observer.onError(e);
             e.printStackTrace();
@@ -232,6 +231,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             }
         }
     }
+
 
 
     @Override
@@ -415,6 +415,12 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     public SimpleObservable<T> refresh() {
         subscribeIfNeed();
         return this;
+    }
+
+
+    protected void toastErrorIfNeed(Error error) {
+        if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
+            Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
     }
 
     //getter or setter-----------------------------------------------------------------------------------------------------------

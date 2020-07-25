@@ -1,5 +1,6 @@
 package org.pulp.fastapi.i;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.Map;
 public interface PageCondition<T> {
     enum MoreType {
         NextPage,
-        PrePAGE
+        PrePage
     }
 
     /**
@@ -39,5 +40,5 @@ public interface PageCondition<T> {
     /**
      * 是否有下一页
      */
-    boolean hasMore(@Nullable T data, MoreType moreType);
+    boolean hasMore(@Nullable T data,@NonNull MoreType moreType);
 }

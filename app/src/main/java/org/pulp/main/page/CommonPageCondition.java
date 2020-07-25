@@ -1,6 +1,7 @@
 package org.pulp.main.page;
 
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.pulp.fastapi.i.PageCondition;
@@ -64,7 +65,7 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
     }
 
     @Override
-    public boolean hasMore(@Nullable T data, MoreType moreType) {
+    public boolean hasMore(@Nullable T data, @NonNull MoreType moreType) {
         if (data == null)
             return true;
 //        return data.getPage_next() > data.getPage();
