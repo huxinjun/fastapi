@@ -99,6 +99,8 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
         }
 
 
+
+
     }
 
     override fun onClick(v: View?) {
@@ -145,22 +147,22 @@ class SegHeader1(ctx: Context) : SegmentDataNullable<IT>() {
                     text = "${data?.name}:${data?.value}"
                 }
 
-                find<RecyclerView>(R.id.rcv_inner) {
-                    templete {
-                        layoutManager = LinearLayoutManager(
-                                ctx,
-                                RecyclerView.HORIZONTAL,
-                                false
-                        )
-
-                        item {
-                            SegHeader1Item(ctx)
-                        }
-
-                    }
-
-                    data { arrayOf("的", "额", "个").asList() }
-                }
+//                find<RecyclerView>(R.id.rcv_inner) {
+//                    templete {
+//                        layoutManager = LinearLayoutManager(
+//                                ctx,
+//                                RecyclerView.HORIZONTAL,
+//                                false
+//                        )
+//
+//                        item {
+//                            SegHeader1Item(ctx)
+//                        }
+//
+//                    }
+//
+//                    data { arrayOf("的", "额", "个").asList() }
+//                }
             }
 
 

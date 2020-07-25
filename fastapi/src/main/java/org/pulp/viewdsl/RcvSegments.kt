@@ -264,6 +264,43 @@ fun RecyclerView.dataFooter(pos: Int, data: Any) {
 
 }
 
+fun RecyclerView.dissmissHeader(i: Int) {
+    val header = header(i)
+    header?.run {
+        tag = layoutParams.height
+        layoutParams.height = 0
+        requestLayout()
+    }
+}
+
+fun RecyclerView.showHeader(i: Int) {
+    val header = header(i)
+    header?.run {
+        if (tag is Int) {
+            layoutParams.height = tag as Int
+            requestLayout()
+        }
+    }
+}
+
+fun RecyclerView.dissmissFooter(i: Int) {
+    val footer = footer(i)
+    footer?.run {
+        tag = layoutParams.height
+        layoutParams.height = 0
+        requestLayout()
+    }
+}
+
+fun RecyclerView.showFooter(i: Int) {
+    val footer = footer(i)
+    footer?.run {
+        if (tag is Int) {
+            layoutParams.height = tag as Int
+            requestLayout()
+        }
+    }
+}
 
 //**************************************
 /**
@@ -271,7 +308,7 @@ fun RecyclerView.dataFooter(pos: Int, data: Any) {
  */
 fun RecyclerView.header(i: Int): View? {
     if (adapter == null)
-        throw RuntimeException("header invoke must after with templete{...}")
+        return null
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
     val targetViewType = segmentSets.headerIndex2ViewType(i)
     segmentSets.mSegments.forEach { (viewType, segment) ->
@@ -289,7 +326,7 @@ fun RecyclerView.header(i: Int): View? {
  */
 fun RecyclerView.footer(i: Int): View? {
     if (adapter == null)
-        throw RuntimeException("footer invoke must after with templete{...}")
+        return null
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
     val targetViewType = segmentSets.footerIndex2ViewType(i)
     segmentSets.mSegments.forEach { (viewType, segment) ->
