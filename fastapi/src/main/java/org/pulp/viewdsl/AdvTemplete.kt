@@ -34,7 +34,7 @@ class ItemViewAdapter<T>(var set: LvSegmentSets) : BaseAdapter() {
 
         segment.bindCb?.let {
             val itemData = set.data[realPos]
-            BindingContext(holder.mFinder, realPos, itemData as T).it()
+            BindingContext(holder.mFinder, set.data.size, realPos, itemData as T).it()
         }
 
         return view

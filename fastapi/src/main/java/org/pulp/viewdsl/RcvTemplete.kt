@@ -101,7 +101,7 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
             }
 
             if (!dataNullable)
-                BindingContext(holder.mFinder, position, itemData as T).it()
+                BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T).it()
             else
                 BindingContextDataNullable(holder.mFinder, position, itemData as T).it()
 

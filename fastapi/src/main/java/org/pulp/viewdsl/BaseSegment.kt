@@ -48,7 +48,7 @@ open class SegmentDataNullable<T> : BaseSegment<T, BindingContextDataNullable<T>
  * 数据视图绑定上下文
  * Created by xinjun on 2020/7/6 15:48
  */
-class BindingContext<T>(val finder: Finder, var pos: Int, var data: T)
+class BindingContext<T>(val finder: Finder,var size:Int, var pos: Int, var data: T)
 
 /**
  * 数据视图绑定上下文,数据可为null
