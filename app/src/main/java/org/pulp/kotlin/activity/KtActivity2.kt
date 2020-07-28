@@ -105,31 +105,29 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(v: View?) {
         mf?.rcv.safe {
-            header(0).safe {
-                finder(this) {
-                    find<RecyclerView>(R.id.rcv_inner) {
-                        data {
-
-                            clear()
-//                            arrayOf("的测温", "费废物废物", "会议厅局医院").asList()
-                        }
-                    }
-                }
+            getData{
+                this.log()
             }
-            footer(0).safe {
-                //                finder(this) {
-//                    find<TextView>(R.id.tv_txt) {
-//                        text = "this is new footer text"
+//            header(0).safe {
+//                finder(this) {
+//                    find<RecyclerView>(R.id.rcv_inner) {
+//                        data {
+//
+//                            clear()
+//                            arrayOf("的测温", "费废物废物", "会议厅局医院").asList()
+//                        }
 //                    }
 //                }
-
-                finder(object : Finder(this) {
-                    @Bind(R.id.tv_txt)
-                    var tv: TextView? = null
-                }) {
-                    tv?.text = "this is new footer text"
-                }
-            }
+//            }
+//            footer(0).safe {
+//
+//                finder(object : Finder(this) {
+//                    @Bind(R.id.tv_txt)
+//                    var tv: TextView? = null
+//                }) {
+//                    tv?.text = "this is new footer text"
+//                }
+//            }
         }
 
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
+import java.lang.Exception
 import kotlin.math.pow
 
 /**
@@ -196,6 +197,23 @@ List<Any>) {
         segmentSets.data.addAll(insertPos, datas)
         if (config.notify)
             notifyDataSetChanged()
+    }
+
+}
+
+
+/**
+ * get RecyclerView data
+ */
+fun RecyclerView.getData(cb:MutableList<Any>.()->Unit){
+    if (adapter == null)
+        return
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    try {
+        @Suppress("UNCHECKED_CAST")
+        segmentSets.data.cb()
+    }catch (ex:Exception){
+        "RecyclerView.getData occur a exception:$ex".log()
     }
 
 }
