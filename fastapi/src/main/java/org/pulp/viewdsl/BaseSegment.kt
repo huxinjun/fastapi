@@ -9,6 +9,7 @@ import android.view.View
  */
 abstract class BaseSegment<T, B> {
 
+    var name: String? = null
     var layoutId: Int = 0
     var viewInstance: View? = null//记录列表视图中的header或footer,在item中无效
     var repeatable: Boolean = false//使列表循环显示
@@ -48,7 +49,7 @@ open class SegmentDataNullable<T> : BaseSegment<T, BindingContextDataNullable<T>
  * 数据视图绑定上下文
  * Created by xinjun on 2020/7/6 15:48
  */
-class BindingContext<T>(val finder: Finder,var size:Int, var pos: Int, var data: T)
+class BindingContext<T>(val finder: Finder, var size: Int, var pos: Int, var data: T)
 
 /**
  * 数据视图绑定上下文,数据可为null

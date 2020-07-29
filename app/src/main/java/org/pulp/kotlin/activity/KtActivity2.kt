@@ -89,6 +89,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                         SegFooter(ctx)
                     }
                     footer {
+                        name = "footer2"
                         SegFooter(ctx)
                     }
                 }
@@ -99,15 +100,12 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
         }
 
 
-
-
     }
 
     override fun onClick(v: View?) {
         mf?.rcv.safe {
-            getData{
-                this.log()
-            }
+            val footer = footer("footer29")
+            "find footer=$footer".log()
 //            header(0).safe {
 //                finder(this) {
 //                    find<RecyclerView>(R.id.rcv_inner) {

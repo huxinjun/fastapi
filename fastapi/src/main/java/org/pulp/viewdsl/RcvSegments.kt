@@ -26,6 +26,7 @@ class TypeInfo(p: Int, d: Any?) {
  */
 class SegmentSets(var ctx: Context) {
 
+    data class SegmentScope(var name: String?)
 
     private val headerInitIndex = -1//must litter than 0
     private val headerCapacity = 100
@@ -57,22 +58,27 @@ class SegmentSets(var ctx: Context) {
     }
 
 
-    fun <T> header(func: () -> SegmentDataNullable<T>) {
+    fun <T> header(func: SegmentScope.() -> SegmentDataNullable<T>) {
         if (headerTypeIndex <= footerInitIndex)
             throw RuntimeException("header max support count $headerCapacity")
-        mSegments.put(headerTypeIndex--, func())
+        val scope = SegmentScope(null)
+        val segment = scope.func()
+        segment.name = scope.name
+        mSegments[headerTypeIndex--] = segment
     }
 
-    fun <T> footer(func: () -> SegmentDataNullable<T>) {
+    fun <T> footer(func: SegmentScope.() -> SegmentDataNullable<T>) {
         if (footerTypeIndex <= footerInitIndex - footerCapacity)
             throw RuntimeException("footer max support count $footerCapacity")
-        @Suppress("UNCHECKED_CAST")
-        mSegments.put(footerTypeIndex--, func())
+        val scope = SegmentScope(null)
+        val segment = scope.func()
+        segment.name = scope.name
+        mSegments[footerTypeIndex--] = segment
     }
 
     fun <T> item(type: Int, func: () -> Segment<T>) {
         checkViewType(type)
-        mSegments.put(type, func())
+        mSegments[type] = func()
     }
 
     fun <T> item(func: () -> Segment<T>) {
@@ -128,7 +134,7 @@ class SegmentSets(var ctx: Context) {
 
     fun footerIndex2ViewType(i: Int) = footerInitIndex - i
 }
-
+//**************************************
 
 @Suppress("UNCHECKED_CAST")
 inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
@@ -173,7 +179,7 @@ inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
         set
     }
 }
-
+//**************************************
 
 inline fun RecyclerView.data(init: Config.() ->
 List<Any>) {
@@ -205,14 +211,14 @@ List<Any>) {
 /**
  * get RecyclerView data
  */
-fun RecyclerView.getData(cb:MutableList<Any>.()->Unit){
+fun RecyclerView.getData(cb: MutableList<Any>.() -> Unit) {
     if (adapter == null)
         return
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
     try {
         @Suppress("UNCHECKED_CAST")
         segmentSets.data.cb()
-    }catch (ex:Exception){
+    } catch (ex: Exception) {
         "RecyclerView.getData occur a exception:$ex".log()
     }
 
@@ -234,6 +240,9 @@ Boolean) {
         return emptyList()
     }
 }
+
+
+//**************************************
 
 
 fun RecyclerView.dataHeader(pos: Int, data: Any) {
@@ -282,6 +291,8 @@ fun RecyclerView.dataFooter(pos: Int, data: Any) {
 
 }
 
+//**************************************
+
 fun RecyclerView.dissmissHeader(i: Int) {
     val header = header(i)
     header?.run {
@@ -291,8 +302,28 @@ fun RecyclerView.dissmissHeader(i: Int) {
     }
 }
 
+fun RecyclerView.dissmissHeader(name: String) {
+    val header = header(name)
+    header?.run {
+        tag = layoutParams.height
+        layoutParams.height = 0
+        requestLayout()
+    }
+}
+
+
 fun RecyclerView.showHeader(i: Int) {
     val header = header(i)
+    header?.run {
+        if (tag is Int) {
+            layoutParams.height = tag as Int
+            requestLayout()
+        }
+    }
+}
+
+fun RecyclerView.showHeader(name: String) {
+    val header = header(name)
     header?.run {
         if (tag is Int) {
             layoutParams.height = tag as Int
@@ -310,6 +341,15 @@ fun RecyclerView.dissmissFooter(i: Int) {
     }
 }
 
+fun RecyclerView.dissmissFooter(name: String) {
+    val footer = footer(name)
+    footer?.run {
+        tag = layoutParams.height
+        layoutParams.height = 0
+        requestLayout()
+    }
+}
+
 fun RecyclerView.showFooter(i: Int) {
     val footer = footer(i)
     footer?.run {
@@ -320,7 +360,79 @@ fun RecyclerView.showFooter(i: Int) {
     }
 }
 
+fun RecyclerView.showFooter(name: String) {
+    val footer = footer(name)
+    footer?.run {
+        if (tag is Int) {
+            layoutParams.height = tag as Int
+            requestLayout()
+        }
+    }
+}
+
+
+fun RecyclerView.isHeaderVisible(i: Int): Boolean {
+    val header = header(i)
+    header?.run {
+        return height > 0 || layoutParams.height > 0
+    }
+    return false
+}
+
+fun RecyclerView.isHeaderVisible(name: String): Boolean {
+    val header = header(name)
+    header?.run {
+        return height > 0 || layoutParams.height > 0
+    }
+    return false
+}
+
+
+fun RecyclerView.isFooterVisible(i: Int): Boolean {
+    val header = footer(i)
+    header?.run {
+        return height > 0 || layoutParams.height > 0
+    }
+    return false
+}
+
+fun RecyclerView.isFooterVisible(name: String): Boolean {
+    val header = footer(name)
+    header?.run {
+        return height > 0 || layoutParams.height > 0
+    }
+    return false
+}
+
 //**************************************
+/**
+ * get a header view by name from RecyclerView
+ */
+fun RecyclerView.header(name: String): View? {
+    if (adapter == null)
+        return null
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    segmentSets.mSegments.values.forEach {
+        if (name.equals(it.name))
+            return it.viewInstance
+    }
+    return null
+}
+
+/**
+ * get a header view by name from RecyclerView
+ */
+fun RecyclerView.footer(name: String): View? {
+    if (adapter == null)
+        return null
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    segmentSets.mSegments.values.forEach {
+        if (name.equals(it.name))
+            return it.viewInstance
+    }
+    return null
+}
+
 /**
  * get a header view by position from RecyclerView
  */
