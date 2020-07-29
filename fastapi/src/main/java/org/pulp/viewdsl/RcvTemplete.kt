@@ -90,11 +90,12 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
             val dataNullable: Boolean
             if (segmentSets.isHeader(position)) {
                 dataNullable = true
-                itemData = segmentSets.dataHeader[position]
+                val viewType = segmentSets.headerPos2Type(position)
+                itemData = segmentSets.dataHeader[viewType]
             } else if (segmentSets.isFooter(position)) {
                 dataNullable = true
-                itemData = segmentSets
-                        .dataFooter[position - segmentSets.headerSize() - segmentSets.data.size]
+                val viewType = segmentSets.footerPos2Type(position)
+                itemData = segmentSets.dataFooter[viewType]
             } else {
                 dataNullable = false
                 itemData = segmentSets.data[position - segmentSets.headerSize()]

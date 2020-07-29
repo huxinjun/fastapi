@@ -28,16 +28,27 @@ class SegmentSets(var ctx: Context) {
 
     data class SegmentScope(var name: String?)
 
-    private val headerInitIndex = -1//must litter than 0
-    private val headerCapacity = 100
-    private val footerInitIndex = headerInitIndex - headerCapacity
-    private val footerCapacity = 100
-    private var headerTypeIndex = headerInitIndex
-    private var footerTypeIndex = footerInitIndex
+    companion object {
+        val headerInitIndex = -1//must litter than 0
+        val headerCapacity = 100
+        val footerInitIndex = headerInitIndex - headerCapacity
+        val footerCapacity = 100
+    }
+
+    var headerTypeIndex = headerInitIndex
+    var footerTypeIndex = footerInitIndex
+
+    var headerSize = -1
+    var footerSize = -1
 
 
+    //item使用的数据,key:position
     var data: MutableList<Any> = mutableListOf()
+
+    //header使用的数据,key:viewtype
     var dataHeader: MutableMap<Int, Any> = mutableMapOf()
+
+    //footer使用的数据,key:viewtype
     var dataFooter: MutableMap<Int, Any> = mutableMapOf()
 
     var typeBlock: (TypeInfo.() -> Int)? = null
@@ -67,6 +78,7 @@ class SegmentSets(var ctx: Context) {
         mSegments[headerTypeIndex--] = segment
     }
 
+
     fun <T> footer(func: SegmentScope.() -> SegmentDataNullable<T>) {
         if (footerTypeIndex <= footerInitIndex - footerCapacity)
             throw RuntimeException("footer max support count $footerCapacity")
@@ -94,45 +106,67 @@ class SegmentSets(var ctx: Context) {
     }
 
     fun headerSize(): Int {
-        var count = 0
+        if (headerSize != -1)
+            return headerSize
+        headerSize = 0
         mSegments.keys.forEach {
             if (it <= headerInitIndex && it > footerInitIndex)
-                count++
+                headerSize++
         }
-        return count
+        return headerSize
     }
 
     fun footerSize(): Int {
-        var count = 0
+        if (footerSize != -1)
+            return footerSize
+        footerSize = 0
         mSegments.keys.forEach {
             if (it <= footerInitIndex && it > footerInitIndex - footerCapacity)
-                count++
+                footerSize++
         }
-        return count
+        return footerSize
     }
 
     fun isHeader(viewType: Float): Boolean =
             viewType.toInt() in (footerInitIndex + 1)..headerInitIndex
 
-    fun isHeader(position: Int): Boolean = position < headerSize()
-
     fun isFooter(viewType: Float): Boolean =
             viewType.toInt() <= footerInitIndex && viewType.toInt() > footerInitIndex - footerCapacity
 
+    fun isHeader(position: Int): Boolean = position < headerSize()
     fun isFooter(position: Int): Boolean = position >= headerSize() + data.size
 
-    fun headerPos2Type(pos: Int): Int = headerInitIndex - pos
+    fun headerPos2Type(pos: Int): Int {
+        val headerTypeList = mutableListOf<Int>()
+        mSegments.keys.forEach {
+            if (isHeader(it.toFloat()))
+                headerTypeList.add(it)
+        }
+        return headerTypeList[pos]
+    }
 
-    fun headerType2Pos(viewType: Int): Int = viewType.abs() - headerInitIndex.abs()
+    fun footerPos2Type(pos: Int): Int {
+        val footerTypeList = mutableListOf<Int>()
+        mSegments.keys.forEach {
+            if (isFooter(it.toFloat()))
+                footerTypeList.add(it)
+        }
+        val newPos = pos - headerSize() - data.size
+        return footerTypeList[newPos]
+    }
 
-    fun footerPos2Type(pos: Int): Int = footerInitIndex - (pos - headerSize() - data.size)
+    //header索引转为viewtype
+    fun headerIndex2ViewType(i: Int) = headerPos2Type(i)
 
-    fun footerType2Pos(viewType: Int): Int =
-            viewType.abs() - footerInitIndex.abs() + (headerSize() + data.size)
-
-    fun headerIndex2ViewType(i: Int) = headerInitIndex - i
-
-    fun footerIndex2ViewType(i: Int) = footerInitIndex - i
+    //footer索引转为viewtype
+    fun footerIndex2ViewType(i: Int): Int {
+        val footerTypeList = mutableListOf<Int>()
+        mSegments.keys.forEach {
+            if (isFooter(it.toFloat()))
+                footerTypeList.add(it)
+        }
+        return footerTypeList[i]
+    }
 }
 //**************************************
 
@@ -246,162 +280,311 @@ Boolean) {
 
 
 fun RecyclerView.dataHeader(pos: Int, data: Any) {
+    var viewType: Int
     if (adapter == null) {
+        viewType = SegmentSets.headerInitIndex - pos
         val tag = getTag(2.toDouble().pow(30.toDouble()).toInt() + 1)
         if (tag == null) {
             val mutableMapOf = mutableMapOf<Int, Any>()
-            mutableMapOf.put(pos, data)
+            mutableMapOf[viewType] = data
             setTag(2.toDouble().pow(30.toDouble()).toInt() + 1, mutableMapOf)
         } else {
             @Suppress("UNCHECKED_CAST")
             val map = tag as MutableMap<Int, Any>
-            map.put(pos, data)
+            map[viewType] = data
         }
         return
     }
     @Suppress("UNCHECKED_CAST")
     val adpt = adapter as RecyclerViewAdpt<*>
     with(adpt) {
-        segmentSets.dataHeader.put(pos, data)
+        viewType = segmentSets.headerIndex2ViewType(pos)
+        segmentSets.dataHeader[viewType] = data
         notifyDataSetChanged()
     }
 
 }
 
 fun RecyclerView.dataFooter(pos: Int, data: Any) {
+    var viewType: Int
     if (adapter == null) {
+        viewType = SegmentSets.footerInitIndex - pos
         val tag = getTag(2.toDouble().pow(30.toDouble()).toInt() + 2)
         if (tag == null) {
             val mutableMapOf = mutableMapOf<Int, Any>()
-            mutableMapOf.put(pos, data)
+            mutableMapOf[viewType] = data
             setTag(2.toDouble().pow(30.toDouble()).toInt() + 2, mutableMapOf)
         } else {
             @Suppress("UNCHECKED_CAST")
             val map = tag as MutableMap<Int, Any>
-            map.put(pos, data)
+            map[viewType] = data
         }
         return
     }
     @Suppress("UNCHECKED_CAST")
     val adpt = adapter as RecyclerViewAdpt<*>
     with(adpt) {
-        segmentSets.dataFooter.put(pos, data)
+        viewType = segmentSets.footerIndex2ViewType(pos)
+        segmentSets.dataFooter[viewType] = data
         notifyDataSetChanged()
     }
 
 }
 
 //**************************************
+/**
+ * insert a header segment to RecyclerView
+ */
+inline fun <T> RecyclerView.headerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
+SegmentDataNullable<T>) {
+    if (adapter == null)
+        return
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    segmentSets.run {
+        if (headerTypeIndex <= SegmentSets.footerInitIndex)
+            throw RuntimeException("header max support count ${SegmentSets.headerCapacity}")
 
-fun RecyclerView.dissmissHeader(i: Int) {
-    val header = header(i)
-    header?.run {
-        tag = layoutParams.height
-        layoutParams.height = 0
-        requestLayout()
+        val viewTypeList: List<Int> = mSegments.keys.toList()
+
+
+        //防止错误输入
+        var newPos = pos
+        if (pos < 0)
+            newPos = 0
+        if (pos >= headerSize())
+            newPos = headerSize()
+
+        //before insert data
+        val newSegments = mutableMapOf<Int, BaseSegment<*, *>>()
+        var i = 0
+        while (i < newPos) {
+            val type: Int = viewTypeList[i]
+            newSegments[type] = mSegments[type] as BaseSegment<*, *>
+            i++
+        }
+
+        //insert data
+        val segScope = SegmentSets.SegmentScope(null)
+        val newSeg = segScope.func()
+        newSeg.name = segScope.name
+        newSegments[headerTypeIndex--] = newSeg
+
+        //after insert data
+        i = newPos
+        while (i < viewTypeList.size) {
+            val type = viewTypeList[i]
+            newSegments[type] = mSegments[type] as BaseSegment<*, *>
+            i++
+        }
+
+        headerSize = -1//需要重新计算
+        mSegments = newSegments
+        adapter?.notifyDataSetChanged()
     }
+
 }
 
-fun RecyclerView.dissmissHeader(name: String) {
-    val header = header(name)
-    header?.run {
-        tag = layoutParams.height
-        layoutParams.height = 0
-        requestLayout()
+
+/**
+ * remove a header segment to RecyclerView
+ */
+fun RecyclerView.headerRemove(pos: Int) {
+
+    if (adapter == null)
+        return
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+
+    segmentSets.run {
+        val viewTypeList = mutableListOf<Int>()
+
+        mSegments.keys.forEach {
+            if (isHeader(it.toFloat()))
+                viewTypeList.add(it)
+        }
+
+        if (viewTypeList.size == 0)
+            return
+
+
+        //防止错误输入
+        var newPos = pos
+        if (pos < 0)
+            newPos = 0
+        if (pos >= viewTypeList.size)
+            newPos = viewTypeList.size - 1
+
+        val type: Int = viewTypeList[newPos]
+        mSegments.remove(type)
+        headerSize = -1
+        adapter?.notifyDataSetChanged()
     }
+
+}
+
+/**
+ * remove a header segment to RecyclerView by name
+ */
+fun RecyclerView.headerRemove(name: String) {
+    val index = index(name)
+    if (index >= 0)
+        headerRemove(index)
 }
 
 
-fun RecyclerView.showHeader(i: Int) {
-    val header = header(i)
-    header?.run {
-        if (tag is Int) {
-            layoutParams.height = tag as Int
-            requestLayout()
+/**
+ * insert a footer segment to RecyclerView
+ */
+inline fun <T> RecyclerView.footerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
+SegmentDataNullable<T>) {
+    if (adapter == null)
+        return
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    segmentSets.run {
+        if (footerTypeIndex <= SegmentSets.footerInitIndex - SegmentSets.footerCapacity)
+            throw RuntimeException("footer max support count ${SegmentSets.footerCapacity}")
+
+        val viewTypeList = mSegments.keys.toList()
+
+
+        //防止错误输入
+        var newPos = pos
+        if (pos < 0)
+            newPos = 0
+        if (pos >= footerSize())
+            newPos = footerSize()
+
+        //before insert data
+        val newSegments = mutableMapOf<Int, BaseSegment<*, *>>()
+        var i = 0
+        while (i < headerSize() + data.size + newPos) {
+            val type: Int = viewTypeList[i]
+            newSegments[type] = mSegments[type] as BaseSegment<*, *>
+            i++
+        }
+
+        //insert data
+        val segScope = SegmentSets.SegmentScope(null)
+        val newSeg = segScope.func()
+        newSeg.name = segScope.name
+        newSegments[footerTypeIndex--] = newSeg
+
+        //after insert data
+        i = headerSize() + data.size + newPos
+        while (i < viewTypeList.size) {
+            val type = viewTypeList[i]
+            newSegments[type] = mSegments[type] as BaseSegment<*, *>
+            i++
+        }
+
+        footerSize = -1//需要重新计算
+        mSegments = newSegments
+        adapter?.notifyDataSetChanged()
+    }
+
+}
+
+
+/**
+ * remove a footer segment to RecyclerView
+ */
+fun RecyclerView.footerRemove(pos: Int) {
+
+    if (adapter == null)
+        return
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+
+    segmentSets.run {
+        val viewTypeList = mutableListOf<Int>()
+
+        mSegments.keys.forEach {
+            if (isFooter(it.toFloat()))
+                viewTypeList.add(it)
+        }
+
+        if (viewTypeList.size == 0)
+            return
+
+
+        //防止错误输入
+        var newPos = pos
+        if (pos < 0)
+            newPos = 0
+        if (pos >= viewTypeList.size)
+            newPos = viewTypeList.size - 1
+
+        val type: Int = viewTypeList[newPos]
+        mSegments.remove(type)
+        footerSize = -1
+        adapter?.notifyDataSetChanged()
+    }
+
+}
+
+
+/**
+ * remove a footer segment to RecyclerView
+ */
+fun RecyclerView.footerRemove(name: String) {
+    val index = index(name)
+    if (index >= 0)
+        footerRemove(index)
+}
+
+
+/**
+ * get header or footer index by name,not fount return -1
+ * if has same name,return first
+ */
+fun RecyclerView.index(name: String): Int {
+    if (adapter == null)
+        return -1
+    if (name.isEmpty())
+        return -1
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+
+    segmentSets.run {
+        val viewTypeList = mutableListOf<Int>()
+
+        //找header
+        mSegments.keys.forEach {
+            if (isHeader(it.toFloat()))
+                viewTypeList.add(it)
+        }
+        var i = 0
+        viewTypeList.forEach {
+            if (name == mSegments[it]?.name)
+                return i
+            i++
+        }
+        //找footer
+        viewTypeList.clear()
+        mSegments.keys.forEach {
+            if (isFooter(it.toFloat()))
+                viewTypeList.add(it)
+        }
+        i = 0
+        viewTypeList.forEach {
+            if (name == mSegments[it]?.name)
+                return i
+            i++
         }
     }
+
+    return -1
 }
 
-fun RecyclerView.showHeader(name: String) {
-    val header = header(name)
-    header?.run {
-        if (tag is Int) {
-            layoutParams.height = tag as Int
-            requestLayout()
-        }
-    }
+fun RecyclerView.headerSize(): Int {
+    if (adapter == null)
+        return 0
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    return segmentSets.headerSize()
 }
 
-fun RecyclerView.dissmissFooter(i: Int) {
-    val footer = footer(i)
-    footer?.run {
-        tag = layoutParams.height
-        layoutParams.height = 0
-        requestLayout()
-    }
-}
-
-fun RecyclerView.dissmissFooter(name: String) {
-    val footer = footer(name)
-    footer?.run {
-        tag = layoutParams.height
-        layoutParams.height = 0
-        requestLayout()
-    }
-}
-
-fun RecyclerView.showFooter(i: Int) {
-    val footer = footer(i)
-    footer?.run {
-        if (tag is Int) {
-            layoutParams.height = tag as Int
-            requestLayout()
-        }
-    }
-}
-
-fun RecyclerView.showFooter(name: String) {
-    val footer = footer(name)
-    footer?.run {
-        if (tag is Int) {
-            layoutParams.height = tag as Int
-            requestLayout()
-        }
-    }
-}
-
-
-fun RecyclerView.isHeaderVisible(i: Int): Boolean {
-    val header = header(i)
-    header?.run {
-        return height > 0 || layoutParams.height > 0
-    }
-    return false
-}
-
-fun RecyclerView.isHeaderVisible(name: String): Boolean {
-    val header = header(name)
-    header?.run {
-        return height > 0 || layoutParams.height > 0
-    }
-    return false
-}
-
-
-fun RecyclerView.isFooterVisible(i: Int): Boolean {
-    val header = footer(i)
-    header?.run {
-        return height > 0 || layoutParams.height > 0
-    }
-    return false
-}
-
-fun RecyclerView.isFooterVisible(name: String): Boolean {
-    val header = footer(name)
-    header?.run {
-        return height > 0 || layoutParams.height > 0
-    }
-    return false
+fun RecyclerView.footerSize(): Int {
+    if (adapter == null)
+        return 0
+    val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
+    return segmentSets.footerSize()
 }
 
 //**************************************
@@ -412,9 +595,21 @@ fun RecyclerView.header(name: String): View? {
     if (adapter == null)
         return null
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
-    segmentSets.mSegments.values.forEach {
-        if (name.equals(it.name))
-            return it.viewInstance
+
+    segmentSets.run {
+        val viewTypeList = mutableListOf<Int>()
+
+        //找header
+        mSegments.keys.forEach {
+            if (isHeader(it.toFloat()))
+                viewTypeList.add(it)
+        }
+        var i = 0
+        viewTypeList.forEach {
+            if (name == mSegments[it]?.name)
+                return mSegments[it]?.viewInstance
+            i++
+        }
     }
     return null
 }
@@ -426,9 +621,20 @@ fun RecyclerView.footer(name: String): View? {
     if (adapter == null)
         return null
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
-    segmentSets.mSegments.values.forEach {
-        if (name.equals(it.name))
-            return it.viewInstance
+    segmentSets.run {
+        val viewTypeList = mutableListOf<Int>()
+
+        //找header
+        mSegments.keys.forEach {
+            if (isFooter(it.toFloat()))
+                viewTypeList.add(it)
+        }
+        var i = 0
+        viewTypeList.forEach {
+            if (name == mSegments[it]?.name)
+                return mSegments[it]?.viewInstance
+            i++
+        }
     }
     return null
 }

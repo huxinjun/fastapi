@@ -45,6 +45,9 @@ class MyFinder(v: View) : Finder(v) {
     @Bind(1000)
     var btn: Button? = null
 
+    @Bind(1002)
+    var btn2: Button? = null
+
     @Bind(1001)
     var rcv: RecyclerView? = null
 }
