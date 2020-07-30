@@ -84,6 +84,14 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                         SegHeader2(ctx)
                     }
 
+                    footer {
+                        SegFooter(ctx)
+                    }
+                    footer {
+                        name = "footer2"
+                        SegFooter(ctx)
+                    }
+
                     item(11) {
                         SegItem1(ctx)
                     }
@@ -96,13 +104,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
                     }
 
-                    footer {
-                        SegFooter(ctx)
-                    }
-                    footer {
-                        name = "footer2"
-                        SegFooter(ctx)
-                    }
+
                 }
 
                 dataHeader(1, IT("测试header填充数据", "after templete"))
@@ -125,13 +127,13 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
             1002 -> {
                 mf?.rcv.safe {
-                    headerRemove("header1")
+                    headerRemove(88)
                 }
             }
 
             1003 -> {
                 mf?.rcv.safe {
-                    footerAdd(1) {
+                    footerAdd(0) {
                         name = "addfooter"
                         SegFooter(ctx)
                     }
@@ -141,7 +143,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
             1004 -> {
 
                 mf?.rcv.safe {
-                    footerRemove("footer2")
+                    footerRemove(88)
                 }
 
             }
@@ -163,7 +165,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                 mf?.rcv.safe {
                     val footer = footer(0)
                     footer.safe {
-                        findViewById<TextView>(R.id.tv_txt).text = "find header view by pos"
+                        findViewById<TextView>(R.id.tv_txt).text = "find footer view by pos"
                     }
                 }
             }
@@ -179,7 +181,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                 mf?.rcv.safe {
                     val footer = footer("footer2")
                     footer.safe {
-                        findViewById<TextView>(R.id.tv_txt).text = "find header view by name"
+                        findViewById<TextView>(R.id.tv_txt).text = "find footer view by name"
                     }
                 }
             }

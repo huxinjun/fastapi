@@ -30,7 +30,7 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
 
     override fun getItemViewType(position: Int): Int {
         segmentSets.run {
-            "pos=$position,isHeader=${isHeader(position)},isFooter=${isFooter(position)},headersize=${headerSize()},datasize=${data.size}".log()
+//            "pos=$position,isHeader=${isHeader(position)},isFooter=${isFooter(position)},headersize=${headerSize()},datasize=${data.size}".log()
             if (isHeader(position))
                 return headerPos2Type(position)
             else if (isFooter(position))
@@ -40,7 +40,7 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
         var viewType = 0
         segmentSets.typeBlock?.let {
             val realPos = position - segmentSets.headerSize()
-            "pos=$position,realpos=$realPos,headersize=${segmentSets.headerSize()}".log()
+//            "pos=$position,realpos=$realPos,headersize=${segmentSets.headerSize()}".log()
             val data = TypeInfo(realPos, segmentSets.data.get(realPos))
             viewType = segmentSets.typeBlock!!(data)
         }
@@ -51,15 +51,19 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH<T> {
-        "onCreateViewHolder.viewType=$viewType".log()
-        val segment = segmentSets.mSegments[viewType]
+//        "onCreateViewHolder.viewType=$viewType".log()
+        val isHeader = segmentSets.isHeader(viewType.toFloat())
+        val isFooter = segmentSets.isFooter(viewType.toFloat())
+
+        val segment = when {
+            isHeader -> segmentSets.mSegmentsHeader[viewType]!!
+            isFooter -> segmentSets.mSegmentsFooter[viewType]!!
+            else -> segmentSets.mSegments[viewType]!!
+        }
+
         var view: View? = null
-        segment?.run {
-
-            val isHeader = segmentSets.isHeader(viewType.toFloat())
-            val isFooter = segmentSets.isFooter(viewType.toFloat())
-
-            "onCreateViewHolder.viewType=$viewType,viewInstance=$view,segment=$segment,isHeader=$isHeader,isFooter=$isFooter".log()
+        segment.run {
+//            "onCreateViewHolder.viewType=$viewType,viewInstance=$view,segment=$segment,isHeader=$isHeader,isFooter=$isFooter".log()
             if (viewInstance != null && (isHeader || isFooter)) {
                 view = viewInstance
                 return@run

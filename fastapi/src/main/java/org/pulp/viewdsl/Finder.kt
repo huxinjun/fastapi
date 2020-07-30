@@ -72,9 +72,9 @@ inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
             }
 
             val view = find<View>(bindAnno.id)
-            "finder.view=$view".log()
-            "${it.type}".log()
-            "${view::class.java}".log()
+//            "finder.view=$view".log()
+//            "${it.type}".log()
+//            "${view::class.java}".log()
             try {
                 it.set(declare, view)
             } catch (e: Exception) {

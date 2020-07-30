@@ -31,8 +31,13 @@ class KtActivity1 : AppCompatActivity() {
 class DataTest {
     var a = "fewfew"
     var headerData = HeaderData()
-    var arr = arrayOf(IT0("test", "1"), IT("as", "2"), IT("324", "3")).asList()
-//    var arr = arrayOf(1, 2, 3).asList()
+    var arr = arrayOf(
+            IT0("item", "1"),
+            IT("item", "2"),
+            IT("item", "3"),
+            IT("item", "4"),
+            IT("item", "5")
+    ).asList()
 }
 
 class IT0(var data: String, var text: String)

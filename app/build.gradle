@@ -51,7 +51,7 @@ dependencies {
 
     
     implementation project(path: ':fastapi')
-//    implementation 'org.pulp:fastapi:1.6.5'
+//    implementation 'org.pulp:fastapi:1.6.7'
 
 
 
