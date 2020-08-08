@@ -10,22 +10,22 @@ import java.util.Map;
 
 public class BadCondition implements PageCondition<Object> {
     @Override
-    public Map<String, String> nextPage(@Nullable Object data) {
+    public Map<String, String> nextPage(@NonNull @Nullable Object data) {
         return null;
     }
 
     @Override
-    public Map<String, String> prePage(@Nullable Object data) {
+    public Map<String, String> prePage(@NonNull @Nullable Object data) {
         return null;
     }
 
     @Override
-    public Map<String, String> page(@Nullable Object data, int page) {
+    public Map<String, String> page(@NonNull @Nullable Object data, int page) {
         return null;
     }
 
     @Override
-    public boolean hasMore(@Nullable Object data, @NonNull MoreType moreType) {
+    public boolean hasMore(@NonNull Object data, @NonNull MoreType moreType) {
         Log.out("hasMore.data=" + data);
         return false;
     }

@@ -72,7 +72,12 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getDataForPre(), PageCondition.MoreType.PrePage)) {
+                T dataForPre = getDataForPre();
+                if (dataForPre == null) {
+                    Log.out("prePage faild!because no data");
+                    return;
+                }
+                if (!mPageCondition.hasMore(dataForPre, PageCondition.MoreType.PrePage)) {
                     abortOnce();
                     final Error error = new Error();
                     error.setCode(Error.ERR_NO_PREVIOUS_DATA);
@@ -88,7 +93,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                     });
                     return;
                 }
-                setExtraParam(mPageCondition.prePage(getDataForPre()));
+                setExtraParam(mPageCondition.prePage(dataForPre));
                 subscribeIfNeed();
             }
         });
@@ -106,7 +111,12 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
         runInBox(new Runnable() {
             @Override
             public void run() {
-                if (!mPageCondition.hasMore(getDataForNext(), PageCondition.MoreType.NextPage)) {
+                T dataForNext = getDataForNext();
+                if (dataForNext == null) {
+                    Log.out("nextPage faild!because no data");
+                    return;
+                }
+                if (!mPageCondition.hasMore(dataForNext, PageCondition.MoreType.NextPage)) {
                     abortOnce();
                     final Error error = new Error();
                     error.setCode(Error.ERR_NO_MORE_DATA);
@@ -122,7 +132,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                     });
                     return;
                 }
-                setExtraParam(mPageCondition.nextPage(getDataForNext()));
+                setExtraParam(mPageCondition.nextPage(dataForNext));
                 subscribeIfNeed();
             }
         });
@@ -139,7 +149,12 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
         runInBox(new Runnable() {
             @Override
             public void run() {
-                Map<String, String> param = mPageCondition.page(getCurrData(), page);
+                T currData = getCurrData();
+                if (currData == null) {
+                    Log.out("page faild!because no data");
+                    return;
+                }
+                Map<String, String> param = mPageCondition.page(currData, page);
                 if (param == null) {
                     abortOnce();
                     final Error error = new Error();
@@ -156,7 +171,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                     });
                     return;
                 }
-                setExtraParam(mPageCondition.page(getCurrData(), page));
+                setExtraParam(mPageCondition.page(currData, page));
                 subscribeIfNeed();
             }
         });
@@ -194,7 +209,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
     public SimpleListObservable<T> reset() {
         setCurrData(null);
         allDatas.clear();
-        setExtraParam(mPageCondition.nextPage(null));
+        setExtraParam(null);
         return this;
     }
 
@@ -258,10 +273,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
      */
     @SuppressWarnings({"UnusedReturnValue", "WeakerAccess"})
     public SimpleObservable<T> pageCondition(PageCondition<T> mPageCondition) {
-        boolean isFirstSet = this.mPageCondition == null;
         this.mPageCondition = mPageCondition;
-        if (isFirstSet)
-            setExtraParam(mPageCondition.nextPage(getDataForNext()));
         return this;
     }
 

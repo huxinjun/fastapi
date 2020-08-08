@@ -29,26 +29,20 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
     };
 
     @Override
-    public Map<String, String> nextPage(@Nullable T data) {
-        if (data == null)
-            return deffaultParamMap;
+    public Map<String, String> nextPage(@NonNull T data) {
         int page_next = data.getPage_next();
         return page(data, page_next);
     }
 
     @Override
-    public Map<String, String> prePage(@Nullable T data) {
-        if (data == null)
-            return deffaultParamMap;
+    public Map<String, String> prePage(@NonNull T data) {
         int page_previous = data.getPage_previous();
         return page(data, page_previous);
     }
 
     @Override
-    public Map<String, String> page(@Nullable T data, int go) {
+    public Map<String, String> page(@NonNull T data, int go) {
         Log.out("go=" + go);
-        if (data == null)
-            return deffaultParamMap;
         int page = data.getPage();
         int page_next = data.getPage_next();
         int page_count = data.getPage_count();
@@ -66,9 +60,7 @@ public class CommonPageCondition<T extends ListModel> implements PageCondition<T
     }
 
     @Override
-    public boolean hasMore(@Nullable T data, @NonNull MoreType moreType) {
-        if (data == null)
-            return true;
+    public boolean hasMore(@NonNull T data, @NonNull MoreType moreType) {
 //        return data.getPage_next() > data.getPage();
         return data.getPage_next() < 5;
     }
