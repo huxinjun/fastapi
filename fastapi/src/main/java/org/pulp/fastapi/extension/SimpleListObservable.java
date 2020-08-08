@@ -218,16 +218,22 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
 
     @Override
     public SimpleListObservable<T> cachePolicy(CacheControl cacheControl) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.cachePolicy(cacheControl);
     }
 
     @Override
     public SimpleListObservable<T> cachePolicy(String cacheControlStr) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.cachePolicy(cacheControlStr);
     }
 
     @Override
     public SimpleListObservable<T> cachePolicy(CachePolicy cachePolicy) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.cachePolicy(cachePolicy);
     }
 
@@ -253,25 +259,35 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
     }
 
     public SimpleListObservable<T> setSuccess(Success<T> success) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.setSuccess(success);
     }
 
 
     public SimpleListObservable<T> setFaild(Faild faild) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.setFaild(faild);
     }
 
     public SimpleListObservable<T> setOver(Over over) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.setOver(over);
     }
 
 
     @Override
     public SimpleListObservable<T> toastError() {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.toastError();
     }
 
     public SimpleObservable<T> lookTimeUsed(@NonNull String tag) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.lookTimeUsed(tag);
     }
 
