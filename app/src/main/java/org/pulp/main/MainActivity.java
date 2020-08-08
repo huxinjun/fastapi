@@ -148,7 +148,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void testGetListDataFirst(View view) {
+        data.reset().success(str -> {
+            output("on success callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(str + "\n");
+            output("-----------------");
+        }).faild(error -> {
+            output("on error callback:\n");
+            output(((TextView) view).getText() + "\n");
+            output(error.getMsg() + "\n");
+            output("-----------------\n");
+        }).lookTimeUsed("list time use---");
+
+    }
+
     public void testGetListDataNext(View view) {
+
         data.nextPage().success(str -> {
             output("on success callback:\n");
             output(((TextView) view).getText() + "\n");

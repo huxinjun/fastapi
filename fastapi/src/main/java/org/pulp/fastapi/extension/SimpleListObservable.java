@@ -75,6 +75,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 T dataForPre = getDataForPre();
                 if (dataForPre == null) {
                     Log.out("prePage faild!because no data");
+                    abortOnce();
                     return;
                 }
                 if (!mPageCondition.hasMore(dataForPre, PageCondition.MoreType.PrePage)) {
@@ -114,6 +115,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 T dataForNext = getDataForNext();
                 if (dataForNext == null) {
                     Log.out("nextPage faild!because no data");
+                    abortOnce();
                     return;
                 }
                 if (!mPageCondition.hasMore(dataForNext, PageCondition.MoreType.NextPage)) {
@@ -152,6 +154,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 T currData = getCurrData();
                 if (currData == null) {
                     Log.out("page faild!because no data");
+                    abortOnce();
                     return;
                 }
                 Map<String, String> param = mPageCondition.page(currData, page);
@@ -230,16 +233,22 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
 
     @Override
     public SimpleListObservable<T> success(Success<T> success) {
+        if (isAbort())
+            return this;
         realSuccess = success;
         return (SimpleListObservable<T>) super.success(mSuccess);
     }
 
     @Override
     public SimpleListObservable<T> faild(Faild faild) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.faild(faild);
     }
 
     public SimpleListObservable<T> over(Over over) {
+        if (isAbort())
+            return this;
         return (SimpleListObservable<T>) super.over(over);
     }
 

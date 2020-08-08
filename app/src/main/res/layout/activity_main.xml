@@ -83,6 +83,12 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:onClick="testGetListDataFirst"
+                    android:text="第一页" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:onClick="testGetListDataNext"
                     android:text="分页测试下一页" />
 

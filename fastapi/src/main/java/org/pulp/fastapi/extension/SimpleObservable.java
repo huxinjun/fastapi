@@ -105,6 +105,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     private Success<T> success;
     private Faild faild;
     private boolean newRequest = true;//用于链式调用只subscrib一次,并且同一个SimpleObservable多次复用
+    private boolean abort = false;
     private Map<String, String> extraParam;
     private boolean mIsToastError;
     private InternalObserver mInternalObserver;
@@ -231,7 +232,6 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             }
         }
     }
-
 
 
     @Override
@@ -399,14 +399,17 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
         newRequest = false;
     }
 
+
     //终止一次代码块后续的请求
     //用于分页没有数据时,不让success等方法发出订阅请求
     void abortOnce() {
+        abort = true;
         newRequest = false;
         mHandler.post(new Runnable() {
             @Override
             public void run() {
                 newRequest = true;
+                abort = false;
             }
         });
     }
@@ -617,5 +620,9 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
     Handler getHandler() {
         return mHandler;
+    }
+
+    protected boolean isAbort() {
+        return abort;
     }
 }
