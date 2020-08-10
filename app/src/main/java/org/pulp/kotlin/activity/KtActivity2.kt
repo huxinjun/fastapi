@@ -415,3 +415,20 @@ class MyActivityUI2 : AnkoComponent<KtActivity2> {
         }
     }
 }
+
+class DataTest {
+    var a = "fewfew"
+    var headerData = HeaderData()
+    var arr = arrayOf(
+            IT0("item", "1"),
+            IT("item", "2"),
+            IT("item", "3"),
+            IT("item", "4"),
+            IT("item", "5")
+    ).asList()
+}
+class HeaderData() {
+    var a = "this is header"
+}
+class IT0(var data: String, var text: String)
+class IT(var name: String, var value: String)

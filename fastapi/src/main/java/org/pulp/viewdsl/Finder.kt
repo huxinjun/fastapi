@@ -29,7 +29,8 @@ open class Finder(var view: View) {
         if (history[id] != null)
             return history[id] as T
         val v: T = view.findViewById(id)
-                ?: throw RuntimeException("finder not find any view by id[${id}],you can use method R to find this view:eg 123456.R(R)")
+                ?: throw RuntimeException("finder not find any view by id[${view
+                        .context.resources.getResourceName(id)}]")
         history.put(id, v)
         return v
     }
@@ -78,7 +79,9 @@ inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
             try {
                 it.set(declare, view)
             } catch (e: Exception) {
-                throw RuntimeException("view type different,class[${declare::class.qualifiedName}]" +
+                throw RuntimeException("view type different for id[${view
+                        .context.resources.getResourceName(bindAnno.id)}],class[${declare::class
+                        .qualifiedName}]" +
                         ",field[${it.name}],java view type[${it.type}],xml view type[${view::class.java}]")
             }
 
