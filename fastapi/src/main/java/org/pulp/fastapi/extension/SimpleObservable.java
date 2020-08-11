@@ -201,6 +201,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             toastErrorIfNeed(error);
             if (observer != null)
                 observer.onError(e);
+            if (SimpleObservable.this.over != null)
+                over.onOver();
             e.printStackTrace();
         }
 
