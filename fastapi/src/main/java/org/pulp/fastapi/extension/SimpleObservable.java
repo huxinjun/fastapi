@@ -191,6 +191,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
                 } else {
                     error.setCode(Error.ERR_CRASH);
                     error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);
+                    Log.out("onError.apicrash=" + error.getMsg());
                 }
             }
             Log.out("onError.message=" + message);
@@ -424,7 +425,7 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
     protected void toastErrorIfNeed(Error error) {
-        if (mIsToastError && !TextUtils.isEmpty(error.getMsg()))
+        if (mIsToastError && !TextUtils.isEmpty(error.getMsg()) && error.getCode() != Error.ERR_CRASH)
             Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
     }
 
