@@ -167,7 +167,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                         case SimpleObservable.TIME_HEADER_FLAG:
                             String[] time = v.split(":");
                             if (time.length == 2) {
-                                info.timeLogFlag = new String(Base64.decode(time[0].replace("!","="),Base64.DEFAULT));
+                                info.timeLogFlag = new String(Base64.decode(time[0].replace("!", "="), Base64.DEFAULT));
                                 info.lastTime = Long.parseLong(time[1]);
                             }
                             break;
@@ -263,14 +263,16 @@ public class SimpleConverterFactory extends Converter.Factory {
                         try {
                             return obj.onParseError(arg);
                         } catch (Exception e) {
-                            CommonUtil.throwError(Error.ERR_PARSE_ERROR, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
+                            CommonUtil.throwError(Error.Code.PARSE_ERROR.code, "a error occur in InterpreterParseError.onParseError,class is " + obj.getClass().getName());
                         }
                         return null;
                     }
                 }, responseInfo.errorParser, jsonStr);
 
-                if (error != null)
+                if (error != null) {
+                    error.setCustomer(true);
                     CommonUtil.throwError(error);
+                }
             }
             logTimeIfNeed(responseInfo, "custom error parse");
 
@@ -284,7 +286,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                                 return null;
                             return ret;
                         } catch (Exception e) {
-                            CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParseBefore.onBeforeParse,class is" + obj.getClass().getName());
+                            CommonUtil.throwError(Error.Code.PARSE_CUSTOM.code, "a error occur in InterpreterParseBefore.onBeforeParse,class is" + obj.getClass().getName());
                         }
                         return null;
                     }
@@ -303,7 +305,7 @@ public class SimpleConverterFactory extends Converter.Factory {
                             T ret = (T) obj.onCustomParse(arg);
                             return ret;
                         } catch (Exception e) {
-                            CommonUtil.throwError(Error.ERR_PARSE_CUSTOM, "a error occur in InterpreterParserCustom.onCustomParse,class is" + obj.getClass().getName());
+                            CommonUtil.throwError(Error.Code.PARSE_CUSTOM.code, "a error occur in InterpreterParserCustom.onCustomParse,class is" + obj.getClass().getName());
                         }
                         return null;
                     }
@@ -330,7 +332,7 @@ public class SimpleConverterFactory extends Converter.Factory {
             logTimeIfNeed(responseInfo, "Gson parse");
             Log.out("parse:data=" + data);
             if (data == null) {
-                CommonUtil.throwError(Error.ERR_PARSE_BEAN, "parse error");
+                CommonUtil.throwError(Error.Code.PARSE_BEAN.code, "parse error");
             }
 
             boolean cacheResponse = responseInfo.isCache;

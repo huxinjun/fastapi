@@ -198,7 +198,7 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                                 assert convertUrl != null;
                                 new Request.Builder().url(convertUrl).build();
                             } catch (IllegalArgumentException e) {
-                                CommonUtil.throwError(Error.ERR_CRASH, "convert url invalid,path="
+                                CommonUtil.throwError(Error.Code.CRASH.code, "convert url invalid,path="
                                         + newPath
                                         + ",url="
                                         + convertUrl

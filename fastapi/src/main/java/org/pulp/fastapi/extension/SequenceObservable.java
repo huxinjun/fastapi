@@ -102,7 +102,7 @@ public class SequenceObservable<T extends IModel> extends SimpleObservable<T> {
     private void nextUrl() {
         if (currIndex >= paths.length - 1) {
             Error error = new Error();
-            error.setCode(Error.ERR_ALL_URLS_INVALID);
+            error.setCode(Error.Code.ALL_URLS_INVALID.code);
             error.setMsg("all path is unreachable");
             if (this.faild != null)
                 this.faild.onFaild(error);

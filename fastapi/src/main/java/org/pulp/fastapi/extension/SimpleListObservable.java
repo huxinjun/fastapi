@@ -81,8 +81,8 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 if (!mPageCondition.hasMore(dataForPre, PageCondition.MoreType.PrePage)) {
                     abortOnce();
                     final Error error = new Error();
-                    error.setCode(Error.ERR_NO_PREVIOUS_DATA);
-                    error.setMsg(Error.generateErrorMsg(error.getCode()));
+                    error.setCode(Error.Code.NO_PREVIOUS_DATA.code);
+                    error.setMsg("no previous data");
                     getHandler().post(new Runnable() {
                         @Override
                         public void run() {
@@ -121,8 +121,8 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 if (!mPageCondition.hasMore(dataForNext, PageCondition.MoreType.NextPage)) {
                     abortOnce();
                     final Error error = new Error();
-                    error.setCode(Error.ERR_NO_MORE_DATA);
-                    error.setMsg(Error.generateErrorMsg(error.getCode()));
+                    error.setCode(Error.Code.NO_MORE_DATA.code);
+                    error.setMsg("no more data");
                     getHandler().post(new Runnable() {
                         @Override
                         public void run() {
@@ -161,8 +161,8 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 if (param == null) {
                     abortOnce();
                     final Error error = new Error();
-                    error.setCode(Error.ERR_NO_PAGE_DATA);
-                    error.setMsg(Error.generateErrorMsg(error.getCode()));
+                    error.setCode(Error.Code.NO_PAGE_DATA.code);
+                    error.setMsg("no page data");
                     getHandler().post(new Runnable() {
                         @Override
                         public void run() {
@@ -192,7 +192,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
                 @Override
                 public void run() {
                     final Error error = new Error();
-                    error.setCode(Error.ERR_PAGE_CONDITION_TYPE_BAD);
+                    error.setCode(Error.Code.PAGE_CONDITION_TYPE_BAD.code);
                     error.setMsg("check your page condition(" + mPageCondition.getClass().getName() + "),because " + e.getMessage());
                     getHandler().post(new Runnable() {
                         @Override
@@ -281,7 +281,7 @@ public class SimpleListObservable<T extends IListModel> extends SimpleObservable
     @Override
     public SimpleListObservable<T> toastError() {
         if (isAbort())
-            return this;
+            return (SimpleListObservable<T>) super.toastErrorNoSubscribe();
         return (SimpleListObservable<T>) super.toastError();
     }
 

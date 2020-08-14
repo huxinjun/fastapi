@@ -186,10 +186,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             } else {
                 error = new Error();
                 if (!CommonUtil.isConnected(Bridge.getContext())) {
-                    error.setCode(Error.ERR_NO_NET);
-                    error.setMsg(Error.generateErrorMsg(Error.ERR_NO_NET));
+                    error.setCode(Error.Code.NO_NET.code);
+                    error.setMsg("no network");
                 } else {
-                    error.setCode(Error.ERR_CRASH);
+                    error.setCode(Error.Code.CRASH.code);
                     error.setMsg("application error,open logcat to preview Warning log or stack detail:" + message);
                     Log.out("onError.apicrash=" + error.getMsg());
                 }
@@ -425,8 +425,8 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
     protected void toastErrorIfNeed(Error error) {
-        if (mIsToastError && !TextUtils.isEmpty(error.getMsg()) && error.getCode() != Error.ERR_CRASH)
-            Toast.makeText(Bridge.getContext(), error.getMsg(), Toast.LENGTH_LONG).show();
+        if (mIsToastError && error != null)
+            Bridge.getSetting().onToastError(error);
     }
 
     //getter or setter-----------------------------------------------------------------------------------------------------------
@@ -477,6 +477,11 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
     public SimpleObservable<T> toastError() {
         mIsToastError = true;
         subscribeIfNeed();
+        return this;
+    }
+
+    protected SimpleObservable<T> toastErrorNoSubscribe() {
+        mIsToastError = true;
         return this;
     }
 

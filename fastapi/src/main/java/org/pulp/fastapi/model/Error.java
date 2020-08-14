@@ -8,28 +8,42 @@ import org.pulp.fastapi.Bridge;
 public class Error {
     public static String SYMBOL = "ERROR_SYMBOL";
 
-    public static final int STATIC_URL_TRICK = -10000;
 
-    public static final int ERR_CRASH = -9000;
-    public static final int ERR_ALL_URLS_INVALID = -9001;
-    public static final int ERR_NO_NET = -9002;
+    /**
+     * error code
+     * Created by xinjun on 2020/8/14 9:05 PM
+     */
+    public enum Code {
 
-    public static final int ERR_NO_MORE_DATA = -8000;
-    public static final int ERR_NO_PREVIOUS_DATA = -8001;
-    public static final int ERR_NO_PAGE_DATA = -8002;
-    public static final int ERR_PAGE_CONDITION_TYPE_BAD = -8003;
+        STATIC_URL_TRICK(-10000),
 
-    public static final int ERR_PARSE_ERROR = -7000;
-    public static final int ERR_PARSE_BEAN = -7001;
-    public static final int ERR_PARSE_CUSTOM = -7002;
+        CRASH(-9000),
+        ALL_URLS_INVALID(-9001),
+        NO_NET(-9002),
 
+        NO_MORE_DATA(-8000),
+        NO_PREVIOUS_DATA(-8001),
+        NO_PAGE_DATA(-8002),
+        PAGE_CONDITION_TYPE_BAD(-8003),
+
+        PARSE_ERROR(-7000),
+        PARSE_BEAN(-7001),
+        PARSE_CUSTOM(-7002);
+
+
+        public int code;
+
+        Code(int code) {
+            this.code = code;
+        }
+    }
 
     private int code;
     private String msg;
-    private Object tag;
+    private boolean isCustomer;//是否解析的是自定义的错误
 
     public static String err2str(Error error) {
-        return SYMBOL + error.getCode() + SYMBOL + error.getMsg() + SYMBOL + error.getTag();
+        return SYMBOL + error.getCode() + SYMBOL + error.getMsg() + SYMBOL + error.isCustomer;
     }
 
     public static Error str2err(String str) {
@@ -38,26 +52,9 @@ public class Error {
         if (split.length == 4) {
             error.code = Integer.parseInt(split[1]);
             error.msg = split[2];
-            error.tag = split[3];
+            error.isCustomer = Boolean.parseBoolean(split[3]);
         }
         return error;
-    }
-
-    public static String generateErrorMsg(int code) {
-        String codeToString = Bridge.getSetting().onErrorCode2String(code);
-        if (!TextUtils.isEmpty(codeToString))
-            return codeToString;
-        switch (code) {
-            case Error.ERR_NO_PAGE_DATA:
-                return "no page data";
-            case Error.ERR_NO_PREVIOUS_DATA:
-                return "no previous data";
-            case Error.ERR_NO_MORE_DATA:
-                return "no more data";
-            case Error.ERR_NO_NET:
-                return "no network";
-        }
-        return null;
     }
 
 
@@ -77,12 +74,12 @@ public class Error {
         this.msg = var1;
     }
 
-    public final Object getTag() {
-        return this.tag;
+    public final boolean isCustomer() {
+        return isCustomer;
     }
 
-    public final void setTag(Object var1) {
-        this.tag = var1;
+    public final void setCustomer(boolean customer) {
+        isCustomer = customer;
     }
 
 }

@@ -164,7 +164,7 @@ public class API {
         public Response intercept(Chain chain) throws IOException {
             Request request = chain.request();
             if (request.header("StaticUrl") != null)
-                CommonUtil.throwError(Error.STATIC_URL_TRICK, "this is a trick!");
+                CommonUtil.throwError(Error.Code.STATIC_URL_TRICK.code, "this is a trick!");
             return chain.proceed(request);
         }
     };

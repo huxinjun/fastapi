@@ -13,6 +13,7 @@ import org.pulp.fastapi.i.InterpreterParserAfter;
 import org.pulp.fastapi.i.InterpreterParserCustom;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.i.PathConverter;
+import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.util.Log;
 import org.pulp.main.model.UrlKey;
 import org.pulp.main.page.CommonPageCondition;
@@ -164,9 +165,8 @@ public class ApiSetting implements Setting {
         return 1000;
     }
 
-    @Nullable
     @Override
-    public String onErrorCode2String(int code) {
-        return null;
+    public void onToastError(@NonNull Error error) {
+
     }
 }

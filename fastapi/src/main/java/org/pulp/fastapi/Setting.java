@@ -10,6 +10,7 @@ import org.pulp.fastapi.i.InterpreterParseBefore;
 import org.pulp.fastapi.i.InterpreterParseError;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.i.PathConverter;
+import org.pulp.fastapi.model.Error;
 
 import java.util.Map;
 
@@ -72,12 +73,8 @@ public interface Setting {
     int onGetReadTimeout();
 
     /**
-     * framework error msg replace to custom
-     * used in SimpleListObservable:
-     * Error.ERR_NO_MORE_DATA
-     * Error.ERR_NO_PREVIOUS_DATA
-     * Error.ERR_NO_PAGE_DATA
+     *
+     * @param error error object
      */
-    @Nullable
-    String onErrorCode2String(int code);
+    void onToastError(@NonNull Error error);
 }
