@@ -178,10 +178,24 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
                         //移除原始参数中和追加参数重复的参数,比如Api接口方法上@Query申明了id
                         //分页传入的参数也传了个id,结果会以分页参数为准
                         Iterator<Map.Entry<String, String>> iterator = queryParams.entrySet().iterator();
-                        while (iterator.hasNext()){
+                        while (iterator.hasNext()) {
                             Map.Entry<String, String> next = iterator.next();
-                            if(params.containsKey(next.getKey()))
+                            if (params.containsKey(next.getKey()))
                                 iterator.remove();
+                        }
+
+                        //移除空参数
+                        Iterator<Map.Entry<String, String>> iteratorQuery = queryParams.entrySet().iterator();
+                        while (iteratorQuery.hasNext()) {
+                            Map.Entry<String, String> next = iteratorQuery.next();
+                            if (TextUtils.isEmpty(next.getValue()))
+                                iteratorQuery.remove();
+                        }
+                        Iterator<Map.Entry<String, String>> iteratorAll = params.entrySet().iterator();
+                        while (iteratorAll.hasNext()) {
+                            Map.Entry<String, String> next = iteratorAll.next();
+                            if (TextUtils.isEmpty(next.getValue()))
+                                iteratorAll.remove();
                         }
 
 
