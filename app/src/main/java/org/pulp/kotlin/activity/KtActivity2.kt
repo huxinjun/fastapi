@@ -1,3 +1,5 @@
+@file:Suppress("PropertyName")
+
 package org.pulp.kotlin.activity
 
 import android.annotation.SuppressLint
@@ -78,7 +80,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
                     header {
                         name = "header1"
-                        SegHeader1(ctx)
+                        SegHeader1()
                     }
                     header {
                         SegHeader2(ctx)
@@ -120,7 +122,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
             1000 -> {
                 mf?.rcv.safe {
                     headerAdd(88) {
-                        SegHeader1(this@KtActivity2)
+                        SegHeader1()
                     }
                 }
             }
@@ -216,15 +218,50 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
 }
 
-class SegHeader1(ctx: Context) : SegmentDataNullable<IT>() {
-    init {
-        layout(R.layout.layout1)
-        bind {
-            finder.run {
-                find<TextView>(R.id.tv_txt) {
-                    text = "${data?.name}:${data?.value}"
+class SegHeader1 : SegmentDataNullable<IT>() {
+
+    @Bind(R.id.tv_txt)
+    lateinit var tv_txt: TextView
+
+    @Bind(R.id.rcv_inner)
+    lateinit var rcv_inner: RecyclerView
+
+    override fun onCreateView() = R.layout.layout1
+
+    override fun onBind(bindCtx: BindingContextDataNullable<IT>) {
+        bindCtx.run {
+            tv_txt.text = "${data?.name}:${data?.value}"
+            rcv_inner.safe {
+                templete {
+                    layoutManager = LinearLayoutManager(
+                            ctx,
+                            RecyclerView.HORIZONTAL,
+                            false
+                    )
+
+                    item {
+                        SegHeader1Item(ctx)
+                    }
+
                 }
 
+                data { arrayOf("的", "额", "个").asList() }
+            }
+        }
+
+    }
+
+}
+
+//class SegHeader1(ctx: Context) : SegmentDataNullable<IT>() {
+//    init {
+//        layout(R.layout.layout1)
+//        bind {
+//            finder.run {
+//                find<TextView>(R.id.tv_txt) {
+//                    text = "${data?.name}:${data?.value}"
+//                }
+//
 //                find<RecyclerView>(R.id.rcv_inner) {
 //                    templete {
 //                        layoutManager = LinearLayoutManager(
@@ -241,24 +278,40 @@ class SegHeader1(ctx: Context) : SegmentDataNullable<IT>() {
 //
 //                    data { arrayOf("的", "额", "个").asList() }
 //                }
-            }
+//            }
+//
+//
+//        }
+//    }
+//}
+
+class SegHeader1Item(private val ctx: Context) : Segment<Any>() {
+
+    @Bind(R.id.tv_abc)
+    lateinit var tv_abc: TextView
 
 
-        }
+    override fun onCreateView(): Int {
+        return R.layout.layout_inner_item
+    }
+
+    override fun onBind(bindCtx: BindingContext<Any>) {
+        tv_abc.text = bindCtx.data.toString()
     }
 }
 
-
-class SegHeader1Item(ctx: Context) : Segment<Any>() {
-    init {
-        layout(R.layout.layout_inner_item)
-        bind {
-            finder.run {
-                find<TextView>(R.id.tv_abc).text = data.toString()
-            }
-        }
-    }
-}
+//class SegHeader1Item(ctx: Context) : Segment<Any>() {
+//    init {
+//
+//        layout(R.layout.layout_inner_item)
+//        bind {
+//            finder.run {
+//                find<TextView>(R.id.tv_abc).text = data.toString()
+//            }
+//        }
+//    }
+//
+//}
 
 class SegHeader2(ctx: Context) : SegmentDataNullable<IT>() {
     init {
@@ -427,8 +480,10 @@ class DataTest {
             IT("item", "5")
     ).asList()
 }
+
 class HeaderData() {
     var a = "this is header"
 }
+
 class IT0(var data: String, var text: String)
 class IT(var name: String, var value: String)

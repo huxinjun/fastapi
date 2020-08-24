@@ -10,9 +10,9 @@ import android.view.View
 abstract class BaseSegment<T, B> {
 
     var name: String? = null
-    var layoutId: Int = 0
-    var viewInstance: View? = null//记录列表视图中的header或footer,在item中无效
-    var repeatable: Boolean = false//使列表循环显示
+    internal var layoutId: Int = 0
+    internal var viewInstance: View? = null//记录列表视图中的header或footer,在item中无效
+    internal var repeatable: Boolean = false//使列表循环显示
 
     //绑定
     var bindCb: (B.() -> Unit)? = null
@@ -32,6 +32,12 @@ abstract class BaseSegment<T, B> {
     fun layout(v: View) {
         viewInstance = v
     }
+
+
+    //第二种使用方式,子类可重写生命周期方法-------------------------
+    open fun onBind(bindCtx: B) {}
+    open fun onCreateView(): Int = 0
+    open fun onViewCreated(view: View) {}
 }
 
 open class Segment<T> : BaseSegment<T, BindingContext<T>>()

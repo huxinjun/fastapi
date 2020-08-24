@@ -67,10 +67,14 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
             if (viewInstance != null && (isHeader || isFooter)) {
                 view = viewInstance
                 return@run
+            } else {
+                if (layoutId <= 0)
+                    layoutId = onCreateView()
+                view = LayoutInflater.from(segmentSets.ctx)
+                        .inflate(layoutId, parent, false)
+                view.safe { onViewCreated(this) }
+                viewInstance = view
             }
-            view = LayoutInflater.from(segmentSets.ctx)
-                    .inflate(segment.layoutId, parent, false)
-            viewInstance = view
         }
 
         //undefine type,that view can be null
@@ -89,7 +93,8 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
 
     @Suppress("UNCHECKED_CAST")
     override fun onBindViewHolder(holder: VH<T>, position: Int) {
-        holder.itemBaseSegment?.bindCb?.let {
+
+        holder.itemBaseSegment?.let {
             val itemData: Any?
             val dataNullable: Boolean
             if (segmentSets.isHeader(position)) {
@@ -105,12 +110,23 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
                 itemData = segmentSets.data[position - segmentSets.headerSize()]
             }
 
-            if (!dataNullable)
-                BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T).it()
-            else
-                BindingContextDataNullable(holder.mFinder, position, itemData as T).it()
 
+            //优先使用bind回调
+            it.bindCb?.let {
+                if (!dataNullable)
+                    BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T).it()
+                else
+                    BindingContextDataNullable(holder.mFinder, position, itemData as T).it()
+            }
 
+            //无回调时使用生命周期方法
+            if (it.bindCb == null) {
+                holder.mFinder.init(it, {})
+                if (!dataNullable)
+                    it.onBind(BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T))
+                else
+                    it.onBind(BindingContextDataNullable(holder.mFinder, position, itemData as T))
+            }
         }
     }
 }
