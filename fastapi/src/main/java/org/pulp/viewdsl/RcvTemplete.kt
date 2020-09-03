@@ -51,6 +51,7 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH<T> {
+        var vh: VH<T>? = null
 //        "onCreateViewHolder.viewType=$viewType".log()
         val isHeader = segmentSets.isHeader(viewType.toFloat())
         val isFooter = segmentSets.isFooter(viewType.toFloat())
@@ -72,7 +73,12 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
                     layoutId = onCreateView()
                 view = LayoutInflater.from(segmentSets.ctx)
                         .inflate(layoutId, parent, false)
-                view.safe { onViewCreated(this) }
+
+                view.safe {
+                    vh = VH(this)
+                    vh?.mFinder?.init(this@run, {})
+                    onViewCreated(this)
+                }
                 viewInstance = view
             }
         }
@@ -82,10 +88,13 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
             view = View(segmentSets.ctx)
 
 
-        val vh = VH<T>(view!!)
+        if (vh == null)
+            vh = VH(view!!)
+
+
         @Suppress("UNCHECKED_CAST")
-        vh.itemBaseSegment = segment as BaseSegment<T, Any>?
-        return vh
+        vh?.itemBaseSegment = segment as BaseSegment<T, Any>?
+        return vh!!
     }
 
     override fun getItemCount() =
