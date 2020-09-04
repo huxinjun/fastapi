@@ -86,13 +86,13 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                         SegHeader2(ctx)
                     }
 
-                    footer {
-                        SegFooter(ctx)
-                    }
-                    footer {
-                        name = "footer2"
-                        SegFooter(ctx)
-                    }
+//                    footer {
+//                        SegFooter(ctx)
+//                    }
+//                    footer {
+//                        name = "footer2"
+//                        SegFooter(ctx)
+//                    }
 
                     item(11) {
                         SegItem1(ctx)
@@ -121,7 +121,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
         when (v?.id) {
             1000 -> {
                 mf?.rcv.safe {
-                    headerAdd(88) {
+                    headerAdd(0) {
                         SegHeader1()
                     }
                 }

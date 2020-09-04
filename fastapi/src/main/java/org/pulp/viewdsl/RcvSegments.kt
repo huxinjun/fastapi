@@ -353,7 +353,7 @@ SegmentDataNullable<T>) {
         i = newPos
         while (i < viewTypeList.size) {
             val type = viewTypeList[i]
-            newSegments[type] = mSegmentsFooter[type] as BaseSegment<*, *>
+            newSegments[type] = mSegmentsHeader[type] as BaseSegment<*, *>
             i++
         }
 
