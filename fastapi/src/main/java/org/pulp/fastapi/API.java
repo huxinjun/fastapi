@@ -56,7 +56,7 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  */
 public class API {
 
-    private static API client;
+    private static API client = new API();
     private Setting setting;
     private OkHttpClient okHttpClient;
     private Map<String, Retrofit> retrofitMap = new HashMap<>();
@@ -292,9 +292,6 @@ public class API {
     }
 
     static API getClient() {
-        if (client == null) {
-            client = new API();
-        }
         return client;
     }
 
