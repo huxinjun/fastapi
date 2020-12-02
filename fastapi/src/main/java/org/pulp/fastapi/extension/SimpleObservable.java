@@ -1,8 +1,10 @@
 package org.pulp.fastapi.extension;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.widget.Toast;
@@ -20,6 +22,7 @@ import org.pulp.fastapi.util.Log;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -246,13 +249,17 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
 
         SimpleCallFactory.getInstance(null).setRequestWatcher(Thread.currentThread().getId(), new SimpleCallFactory.RequestWatcher() {
+            @RequiresApi(api = Build.VERSION_CODES.FROYO)
             @Override
             public Request onRequestCreated(Request request) {
                 Log.out("RequestWatcher.callback=" + Thread.currentThread().getId());
 
+
                 mInternalObserver.logTimeIfNeed("create request");
 
                 Request.Builder builder = request.newBuilder();
+
+
                 if (mRequestRebuilder != null)
                     mRequestRebuilder.onModify(builder, extraParam);
 
@@ -270,6 +277,10 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
 
                 cacheUseAllSupport(builder, finalObserver);
                 mInternalObserver.logTimeIfNeed("cacheUseAllSupport");
+
+
+                //通用header
+                addCommonHeaders(builder);
 
                 return builder.build();
             }
@@ -370,6 +381,21 @@ public class SimpleObservable<T extends IModel> extends Observable<T> implements
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * 添加通用的header
+     */
+    private void addCommonHeaders(Request.Builder builder) {
+        if (builder == null)
+            return;
+        Map<String, String> headerMap = Bridge.getSetting().onGetCommonHeaders();
+        if (headerMap != null && headerMap.size() > 0) {
+            for (Map.Entry<String, String> next : headerMap.entrySet()) {
+                builder.addHeader(next.getKey(), next.getValue());
+            }
         }
     }
 

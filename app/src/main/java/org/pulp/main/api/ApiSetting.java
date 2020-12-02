@@ -139,6 +139,14 @@ public class ApiSetting implements Setting {
 
     @Nullable
     @Override
+    public Map<String, String> onGetCommonHeaders() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("header_test_key", "header_test_value");
+        return headers;
+    }
+
+    @Nullable
+    @Override
     public HttpLoggingInterceptor.Logger onCustomLogger() {
         return null;
     }

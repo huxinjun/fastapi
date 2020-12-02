@@ -48,6 +48,9 @@ public interface Setting {
     @Nullable
     Map<String, String> onGetCommonParams();
 
+    @Nullable
+    Map<String, String> onGetCommonHeaders();
+
 
     @Nullable
     HttpLoggingInterceptor.Logger onCustomLogger();
