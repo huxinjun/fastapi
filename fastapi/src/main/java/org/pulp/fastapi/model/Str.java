@@ -1,7 +1,7 @@
 package org.pulp.fastapi.model;
 
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 public class Str implements IModel {
 

@@ -1,8 +1,9 @@
 package org.pulp.fastapi.extension;
 
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+
+import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IModel;

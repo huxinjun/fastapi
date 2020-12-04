@@ -1,8 +1,8 @@
 package org.pulp.main.page;
 
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.util.Log;

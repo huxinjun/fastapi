@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
+    xmlns:tools="http://schemas.android.com/tools"
     package="org.pulp.main">
 
     <dist:module dist:instant="true" />
@@ -18,6 +19,8 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:appComponentFactory="sds"
+        tools:replace="android:appComponentFactory"
         android:theme="@style/AppTheme">
         <activity android:name="org.pulp.HomeActivity">
             <intent-filter>

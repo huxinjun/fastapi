@@ -2,7 +2,8 @@ package org.pulp.fastapi.factory;
 
 
 import android.annotation.SuppressLint;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.util.Log;
 

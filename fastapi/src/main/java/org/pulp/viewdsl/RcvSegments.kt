@@ -1,9 +1,9 @@
 package org.pulp.viewdsl
 
 import android.content.Context
-import android.support.v7.widget.GridLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.lang.Exception
 import kotlin.math.pow
 

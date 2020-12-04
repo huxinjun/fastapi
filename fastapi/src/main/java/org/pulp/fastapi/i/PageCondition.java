@@ -1,7 +1,8 @@
 package org.pulp.fastapi.i;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Map;
 
@@ -22,7 +23,8 @@ public interface PageCondition<T> {
      * @param data 当前数据
      * @return 要添加在请求中的参数
      */
-    @Nullable Map<String, String> nextPage(@NonNull T data);
+    @Nullable
+    Map<String, String> nextPage(@NonNull T data);
 
     /**
      * 上一页数据

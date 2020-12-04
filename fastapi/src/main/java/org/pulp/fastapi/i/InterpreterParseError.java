@@ -1,7 +1,8 @@
 package org.pulp.fastapi.i;
 
 
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import org.pulp.fastapi.model.Error;
 

@@ -1,7 +1,8 @@
 package org.pulp.fastapi.anno;
 
 
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

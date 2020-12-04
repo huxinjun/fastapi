@@ -2,68 +2,42 @@
 
 package org.pulp.kotlin.activity
 
-import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import org.jetbrains.anko.*
-import org.jetbrains.anko.recyclerview.v7.recyclerView
-import org.jetbrains.anko.sdk25.coroutines.onClick
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import org.pulp.main.R
 import org.pulp.viewdsl.*
 
-class KtActivity2 : AppCompatActivity(), View.OnClickListener {
+class KtActivity2 : AppCompatActivity() {
 
     var mf: MyFinder2? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val createView = MyActivityUI2().createView(AnkoContextImpl(this, this, false))
-        setContentView(createView)
+//        val createView = MyActivityUI2().createView(AnkoContextImpl(this, this, false))
+//        setContentView(createView)
+
+        val inflate = View.inflate(this, R.layout.activity_dsl, null)
+        setContentView(inflate)
 
 
 
+        mf = finder(MyFinder2(inflate)) {
 
-        mf = finder(MyFinder2(createView)) {
-
+            ("finder.rcv=$rcv").log()
             rcv.safe {
                 data { DataTest().arr }
             }
 
-            btn.safe {
-                setOnClickListener(this@KtActivity2)
-            }
-
-            btn2.safe {
-                setOnClickListener(this@KtActivity2)
-            }
-
-            btn3.safe {
-                setOnClickListener(this@KtActivity2)
-            }
-
-            btn4.safe {
-                setOnClickListener(this@KtActivity2)
-            }
-
-            btn5.safe {
-                setOnClickListener(this@KtActivity2)
-            }
-
-            btn6?.setOnClickListener(this@KtActivity2)
-            btn7?.setOnClickListener(this@KtActivity2)
-            btn8?.setOnClickListener(this@KtActivity2)
-            btn9?.setOnClickListener(this@KtActivity2)
 
             rcv.safe {
+                layoutManager = LinearLayoutManager(context)
 
                 dataHeader(0, IT("测试header填充数据", "before templete"))
                 dataFooter(0, IT("测试footer填充数据", "before templete"))
@@ -117,9 +91,11 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 
     }
 
-    override fun onClick(v: View?) {
-        when (v?.id) {
-            1000 -> {
+
+    fun onBtnClick(view: View) {
+
+        when (view.id) {
+            R.id.btn_1 -> {
                 mf?.rcv.safe {
                     headerAdd(0) {
                         SegHeader1()
@@ -127,35 +103,35 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                 }
             }
 
-            1002 -> {
+            R.id.btn_2 -> {
                 mf?.rcv.safe {
                     headerRemove(88)
                 }
             }
 
-            1003 -> {
+            R.id.btn_3 -> {
                 mf?.rcv.safe {
                     footerAdd(0) {
                         name = "addfooter"
-                        SegFooter(ctx)
+                        SegFooter()
                     }
                 }
             }
 
-            1004 -> {
+            R.id.btn_4 -> {
 
                 mf?.rcv.safe {
                     footerRemove(88)
                 }
 
             }
-            1005 -> {
+            R.id.btn_5 -> {
                 mf?.rcv.safe {
                     val index = index("addfooter")
                     "find name=addfooter index=$index".log()
                 }
             }
-            1006 -> {
+            R.id.btn_6 -> {
                 mf?.rcv.safe {
                     val header = header(0)
                     header.safe {
@@ -163,7 +139,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }
-            1007 -> {
+            R.id.btn_7 -> {
                 mf?.rcv.safe {
                     val footer = footer(0)
                     footer.safe {
@@ -171,7 +147,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }
-            1008 -> {
+            R.id.btn_8 -> {
                 mf?.rcv.safe {
                     val header = header("header1")
                     header.safe {
@@ -179,7 +155,7 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }
-            1009 -> {
+            R.id.btn_9 -> {
                 mf?.rcv.safe {
                     val footer = footer("footer2")
                     footer.safe {
@@ -211,8 +187,6 @@ class KtActivity2 : AppCompatActivity(), View.OnClickListener {
 //                }
 //            }
         }
-
-
     }
 
 
@@ -331,7 +305,7 @@ class SegHeader2(ctx: Context) : SegmentDataNullable<IT>() {
     }
 }
 
-class SegFooter(ctx: Context) : SegmentDataNullable<IT>() {
+class SegFooter() : SegmentDataNullable<IT>() {
     init {
         layout(R.layout.layout1)
         bind {
@@ -385,89 +359,91 @@ class SegItem3(ctx: Context) : Segment<IT>() {
 
 
 class MyFinder2(v: View) : Finder(v) {
-    @Bind(1000)
+    @Bind(R.id.btn_1)
     var btn: Button? = null
 
-    @Bind(1001)
-    var rcv: RecyclerView? = null
-
-    @Bind(1002)
+    @Bind(R.id.btn_2)
     var btn2: Button? = null
 
-    @Bind(1003)
+    @Bind(R.id.btn_3)
     var btn3: Button? = null
 
-    @Bind(1004)
+    @Bind(R.id.btn_4)
     var btn4: Button? = null
 
-    @Bind(1005)
+    @Bind(R.id.btn_5)
     var btn5: Button? = null
 
-    @Bind(1006)
+    @Bind(R.id.btn_6)
     var btn6: Button? = null
 
-    @Bind(1007)
+    @Bind(R.id.btn_7)
     var btn7: Button? = null
 
-    @Bind(1008)
+    @Bind(R.id.btn_8)
     var btn8: Button? = null
 
-    @Bind(1009)
+    @Bind(R.id.btn_9)
     var btn9: Button? = null
 
+
+    @Bind(R.id.rcv)
+    var rcv: RecyclerView? = null
+
 }
 
-
-class MyActivityUI2 : AnkoComponent<KtActivity2> {
-    @SuppressLint("SetTextI18n", "ResourceType")
-    override fun createView(ui: AnkoContext<KtActivity2>): View {
-        return ui.run {
-            verticalLayout {
-                button("header Add") {
-                    id = 1000
-                    onClick { ctx.toast("Hello!") }
-
-                }
-                button("header Remove") {
-                    id = 1002
-                }
-                button("footer Add") {
-                    id = 1003
-                }
-                button("footer Remove") {
-                    id = 1004
-                }
-                button("find index by name") {
-                    id = 1005
-                }
-                button("get header view by index") {
-                    id = 1006
-                }
-                button("get footer view by index") {
-                    id = 1007
-                }
-                button("get header view by name") {
-                    id = 1008
-                }
-                button("get footer view by name") {
-                    id = 1009
-                }
-
-                recyclerView {
-                    id = 1001
-                    backgroundColor = Color.parseColor("#88dedede")
-                    layoutManager = LinearLayoutManager(ui.ctx)
-                    overScrollMode = View.OVER_SCROLL_NEVER
-                    layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-
-                }
-            }
-        }
-    }
-}
+//
+//class MyActivityUI2 : AnkoComponent<KtActivity2> {
+//    @SuppressLint("SetTextI18n", "ResourceType")
+//    override fun createView(ui: AnkoContext<KtActivity2>): View {
+//        return ui.run {
+//            verticalLayout {
+//                button("header Add") {
+//                    id = 1000
+//                    onClick { ctx.toast("Hello!") }
+//
+//                }
+//                button("header Remove") {
+//                    id = 1002
+//                }
+//                button("footer Add") {
+//                    id = 1003
+//                }
+//                button("footer Remove") {
+//                    id = 1004
+//                }
+//                button("find index by name") {
+//                    id = 1005
+//                }
+//                button("get header view by index") {
+//                    id = 1006
+//                }
+//                button("get footer view by index") {
+//                    id = 1007
+//                }
+//                button("get header view by name") {
+//                    id = 1008
+//                }
+//                button("get footer view by name") {
+//                    id = 1009
+//                }
+//
+//
+//                recyclerView {
+//                    id = 1001
+//                    backgroundColor = Color.parseColor("#88dedede")
+//                    layoutManager = LinearLayoutManager(ui.ctx)
+//                    overScrollMode = View.OVER_SCROLL_NEVER
+//                    layoutParams = ViewGroup.LayoutParams(
+//                            ViewGroup.LayoutParams.MATCH_PARENT,
+//                            ViewGroup.LayoutParams.MATCH_PARENT
+//                    )
+//
+//                }
+//            }
+//        }
+//    }
+//}
 
 class DataTest {
     var a = "fewfew"

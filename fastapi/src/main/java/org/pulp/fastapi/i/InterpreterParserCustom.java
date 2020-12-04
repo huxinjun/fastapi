@@ -1,7 +1,8 @@
 package org.pulp.fastapi.i;
 
 
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 /**
  * custom parse

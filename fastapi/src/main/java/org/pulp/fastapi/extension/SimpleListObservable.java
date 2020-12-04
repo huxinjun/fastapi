@@ -1,28 +1,19 @@
 package org.pulp.fastapi.extension;
 
 
-import android.support.annotation.NonNull;
-import android.text.TextUtils;
 
-import org.pulp.fastapi.Bridge;
+import androidx.annotation.NonNull;
+
 import org.pulp.fastapi.i.CachePolicy;
 import org.pulp.fastapi.i.PageCondition;
 import org.pulp.fastapi.model.Error;
 import org.pulp.fastapi.model.IListModel;
-import org.pulp.fastapi.model.IModel;
 import org.pulp.fastapi.util.Log;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import io.reactivex.Observable;
