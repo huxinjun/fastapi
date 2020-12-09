@@ -48,9 +48,11 @@ import okhttp3.Request;
 import retrofit2.Call;
 import retrofit2.CallAdapter;
 import retrofit2.Retrofit;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.HTTP;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 
 /**
  * 支持SimpleObservable的CallAdapter
@@ -293,6 +295,14 @@ public class SimpleCallAdapter<R> implements CallAdapter<R, Object> {
 
                 } else if (annotation instanceof POST) {
                     POST anno = (POST) annotation;
+                    return anno.value();
+
+                } else if (annotation instanceof PUT) {
+                    PUT anno = (PUT) annotation;
+                    return anno.value();
+
+                } else if (annotation instanceof DELETE) {
+                    DELETE anno = (DELETE) annotation;
                     return anno.value();
 
                 } else if (annotation instanceof HTTP) {

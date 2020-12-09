@@ -105,6 +105,11 @@
                 android:layout_height="wrap_content"
                 android:onClick="testGetData_NotMainThread"
                 android:text="子线程测试" />
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="testPut"
+                android:text="put方法测试" />
         </LinearLayout>
     </ScrollView>
 

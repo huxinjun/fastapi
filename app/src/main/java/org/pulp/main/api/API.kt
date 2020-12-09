@@ -16,6 +16,7 @@ import org.pulp.main.parser.TestMethodParserAnno
 import org.pulp.main.parser.UrlKeyParser
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Query
 import java.net.URL
 
@@ -66,5 +67,9 @@ interface TestAPI {
 //    @Page(BadCondition::class)
     @OnBeforeParse(ListBeforeParser::class)
     fun getListData(@Query("testp") p: String): SimpleListObservable<ListModel>
+
+    //put test
+    @PUT("http://115.159.41.117:8081/system/user/profile/updateNick")
+    fun testPut(@Query("nickName") nickName: String): SimpleObservable<Str>
 }
 

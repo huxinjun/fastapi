@@ -205,6 +205,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void testPut(View view) {
+        clear();
+        output("testPut:\n");
+        API.get(this, TestAPI.class).testPut("xsaxsa").success(data1 -> {
+            output("success:\n");
+            output(data1.toString() + "\n");
+        }).toastError();
+    }
 
     //--------------------------------------------------
     public void clear() {
@@ -214,5 +222,6 @@ public class MainActivity extends AppCompatActivity {
     public void output(@Nullable Object txt) {
         tv_content.append(txt == null ? "null" : txt.toString());
     }
+
 
 }
