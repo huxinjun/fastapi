@@ -4,6 +4,8 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import java.lang.Exception
+import java.lang.RuntimeException
 
 /**
  * RecyclerView ViewHolder
@@ -56,32 +58,47 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
         val isHeader = segmentSets.isHeader(viewType.toFloat())
         val isFooter = segmentSets.isFooter(viewType.toFloat())
 
-        val segment = when {
+        val segmentInfo = when {
             isHeader -> segmentSets.mSegmentsHeader[viewType]!!
             isFooter -> segmentSets.mSegmentsFooter[viewType]!!
             else -> segmentSets.mSegments[viewType]!!
         }
 
+        val segment: BaseSegment<*, *>
+        try {
+            segment = segmentInfo.clazz.newInstance()
+        } catch (e: Exception) {
+            throw RuntimeException("Segment must has no zero argument constructor,please check " +
+                    "class" +
+                    ":${segmentInfo.clazz.name}")
+        }
+        segmentInfo.args?.let {
+            segment.onReceiveArg(it)
+        }
+
+
         var view: View? = null
         segment.run {
 //            "onCreateViewHolder.viewType=$viewType,viewInstance=$view,segment=$segment,isHeader=$isHeader,isFooter=$isFooter".log()
-            if (viewInstance != null && (isHeader || isFooter)) {
-                view = viewInstance
+
+            if ((isHeader || isFooter) &&
+                    segment is SegmentDataNullable &&
+                    segment.onCreateViewInstance() != null) {
+                view = segment.onCreateViewInstance()
                 return@run
+
             } else {
-                if (layoutId <= 0)
-                    layoutId = onCreateView()
                 view = LayoutInflater.from(segmentSets.ctx)
-                        .inflate(layoutId, parent, false)
+                        .inflate(onCreateView(), parent, false)
 
                 view.safe {
                     vh = VH(this)
                     vh?.mFinder?.init(this@run, {})
                     onViewCreated(this)
                 }
-                viewInstance = view
             }
         }
+        segmentInfo.view = view
 
         //undefine type,that view can be null
         if (view == null)
@@ -106,36 +123,28 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
         holder.itemBaseSegment?.let {
             val itemData: Any?
             val dataNullable: Boolean
-            if (segmentSets.isHeader(position)) {
-                dataNullable = true
-                val viewType = segmentSets.headerPos2Type(position)
-                itemData = segmentSets.dataHeader[viewType]
-            } else if (segmentSets.isFooter(position)) {
-                dataNullable = true
-                val viewType = segmentSets.footerPos2Type(position)
-                itemData = segmentSets.dataFooter[viewType]
-            } else {
-                dataNullable = false
-                itemData = segmentSets.data[position - segmentSets.headerSize()]
+            when {
+                segmentSets.isHeader(position) -> {
+                    dataNullable = true
+                    val viewType = segmentSets.headerPos2Type(position)
+                    itemData = segmentSets.dataHeader[viewType]
+                }
+                segmentSets.isFooter(position) -> {
+                    dataNullable = true
+                    val viewType = segmentSets.footerPos2Type(position)
+                    itemData = segmentSets.dataFooter[viewType]
+                }
+                else -> {
+                    dataNullable = false
+                    itemData = segmentSets.data[position - segmentSets.headerSize()]
+                }
             }
 
-
-            //优先使用bind回调
-            it.bindCb?.let {
-                if (!dataNullable)
-                    BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T).it()
-                else
-                    BindingContextDataNullable(holder.mFinder, position, itemData as T).it()
-            }
-
-            //无回调时使用生命周期方法
-            if (it.bindCb == null) {
-                holder.mFinder.init(it, {})
-                if (!dataNullable)
-                    it.onBind(BindingContext(holder.mFinder, segmentSets.data.size, position, itemData as T))
-                else
-                    it.onBind(BindingContextDataNullable(holder.mFinder, position, itemData as T))
-            }
+            holder.mFinder.init(it, {})
+            if (!dataNullable)
+                it.onBind(BindingContext(segmentSets.data.size, position, itemData as T))
+            else
+                it.onBind(BindingContextDataNullable(position, itemData as T))
         }
     }
 }

@@ -12,12 +12,33 @@ class LvSegmentSets(var ctx: Context) {
 
 
     var data: MutableList<Any> = mutableListOf()
-    var mSegment: Segment<*>? = null
+    var mSegmentInfo: SegmentInfoForAdapterView? = null
 
-    fun <T> item(func: () -> Segment<T>) {
-        mSegment = func()
+    fun item(func: SegmentScope.() -> Class<out Segment<*>>) {
+        val scope = SegmentScope()
+        val segmentClass = scope.func()
+        val segmentInfo = newSegmentInfo(segmentClass)
+        segmentInfo.repeatable = scope.repeatable
+        mSegmentInfo = segmentInfo
+    }
+
+    private fun newSegmentInfo(clazz: Class<out Segment<*>>) = SegmentInfoForAdapterView(clazz)
+}
+
+@Suppress("UNCHECKED_CAST")
+class SegmentInfoForAdapterView(clazz: Class<out Segment<*>>) : SegmentInfo<Segment<*>>(clazz as Class<Segment<*>>) {
+    var repeatable = false
+}
+
+class SegmentScope : SegmentSets.SegmentScope() {
+    var repeatable = false
+    fun <T> Class<T>.repeatable(repeatable: Boolean): Class<T> {
+        this@SegmentScope.repeatable = repeatable
+        return this
     }
 }
+
+
 
 inline fun AdapterView<*>.templete(crossinline init: LvSegmentSets.() -> Unit) {
     this.adapter = ItemViewAdapter<Any> {

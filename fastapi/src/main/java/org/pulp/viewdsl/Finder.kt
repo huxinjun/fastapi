@@ -57,6 +57,7 @@ inline fun <T : Finder> finder(factory: T, function: T.() -> Unit): T {
     return factory.init(factory, function)
 }
 
+
 inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
 
     declare::class.java.declaredFields.forEach {

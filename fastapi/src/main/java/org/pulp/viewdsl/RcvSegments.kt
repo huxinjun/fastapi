@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package org.pulp.viewdsl
 
 import android.content.Context
@@ -20,19 +22,40 @@ class TypeInfo(p: Int, d: Any?) {
         get
 }
 
+open class SegmentInfo<T>(var clazz: Class<T>) {
+    var name: String? = null
+    var view: View? = null
+    var args: Array<out Any>? = null
+}
+
+
+
+
 /**
  * record info about RecyclerView adapter
  * Created by xinjun on 2020/7/8 11:12
  */
 class SegmentSets(var ctx: Context) {
 
-    data class SegmentScope(var name: String?)
+    open class SegmentScope {
+        var name: String? = null
+        var args: Array<out Any>? = null
+        fun <T> Class<T>.withName(name: String): Class<T> {
+            this@SegmentScope.name = name
+            return this
+        }
+
+        fun <T> Class<T>.withArgs(vararg args: Any): Class<T> {
+            this@SegmentScope.args = args
+            return this
+        }
+    }
 
     companion object {
-        val headerInitIndex = -1//must litter than 0
-        val headerCapacity = 100
-        val footerInitIndex = headerInitIndex - headerCapacity
-        val footerCapacity = 100
+        const val headerInitIndex = -1//must litter than 0
+        const val headerCapacity = 100
+        const val footerInitIndex = headerInitIndex - headerCapacity
+        const val footerCapacity = 100
     }
 
     var headerTypeIndex = headerInitIndex
@@ -50,9 +73,9 @@ class SegmentSets(var ctx: Context) {
 
     var typeBlock: (TypeInfo.() -> Int)? = null
     var spanBlock: (Int.() -> Int)? = null
-    var mSegments = mutableMapOf<Int, BaseSegment<*, *>>()
-    var mSegmentsHeader = mutableMapOf<Int, BaseSegment<*, *>>()
-    var mSegmentsFooter = mutableMapOf<Int, BaseSegment<*, *>>()
+    var mSegments = mutableMapOf<Int, SegmentInfo<out Segment<*>>>()
+    var mSegmentsHeader = mutableMapOf<Int, SegmentInfo<out SegmentDataNullable<*>>>()
+    var mSegmentsFooter = mutableMapOf<Int, SegmentInfo<out SegmentDataNullable<*>>>()
 
 
     fun type(block: TypeInfo.() -> Int) {
@@ -68,41 +91,55 @@ class SegmentSets(var ctx: Context) {
     }
 
 
-    fun <T> header(func: SegmentScope.() -> SegmentDataNullable<T>) {
+    fun header(func: SegmentScope.() -> Class<out SegmentDataNullable<*>>) {
         if (headerTypeIndex <= footerInitIndex)
             throw RuntimeException("header max support count $headerCapacity")
-        val scope = SegmentScope(null)
-        val segment = scope.func()
+        val scope = SegmentScope()
+        val segmentClass = scope.func()
+        val segmentInfo = newSegmentInfoDataNullable(segmentClass)
         if (!scope.name.isNullOrEmpty())
-            segment.name = scope.name
-        mSegmentsHeader[headerTypeIndex--] = segment
+            segmentInfo.name = scope.name
+        segmentInfo.args = scope.args
+        mSegmentsHeader[headerTypeIndex--] = segmentInfo
     }
 
 
-    fun <T> footer(func: SegmentScope.() -> SegmentDataNullable<T>) {
+    fun footer(func: SegmentScope.() -> Class<out SegmentDataNullable<*>>) {
         if (footerTypeIndex <= footerInitIndex - footerCapacity)
             throw RuntimeException("footer max support count $footerCapacity")
-        val scope = SegmentScope(null)
-        val segment = scope.func()
+        val scope = SegmentScope()
+        val segmentClass = scope.func()
+        val segmentInfo = newSegmentInfoDataNullable(segmentClass)
         if (!scope.name.isNullOrEmpty())
-            segment.name = scope.name
-        mSegmentsFooter[footerTypeIndex--] = segment
+            segmentInfo.name = scope.name
+        segmentInfo.args = scope.args
+        mSegmentsFooter[footerTypeIndex--] = segmentInfo
     }
 
-    fun <T> item(type: Int, func: () -> Segment<T>) {
+    fun item(type: Int, func: SegmentScope.() -> Class<out Segment<*>>) {
         checkViewType(type)
-        mSegments[type] = func()
+        val scope = SegmentScope()
+        val segmentClass = scope.func()
+        val segmentInfo = newSegmentInfo(segmentClass)
+        segmentInfo.args = scope.args
+        mSegments[type] = segmentInfo
     }
 
-    fun <T> item(func: () -> Segment<T>) {
+    fun item(func: SegmentScope.() -> Class<out Segment<*>>) {
         item(0, func)
     }
+
+    private fun newSegmentInfo(clazz: Class<out Segment<*>>) = SegmentInfo(clazz)
+    fun newSegmentInfoDataNullable(clazz: Class<out SegmentDataNullable<*>>) = SegmentInfo(clazz)
+
+    //----------------------------------------------------------------------------------------------
 
     fun checkViewType(viewType: Int) {
         if (viewType <= headerInitIndex)
             throw RuntimeException(
                     "item view type must be equal or greatter than $headerInitIndex" +
-                            ",because header and footer was used view type begin $headerInitIndex to ${footerInitIndex - footerCapacity + 1}"
+                            ",because header and footer was used view type begin " +
+                            "$headerInitIndex to ${footerInitIndex - footerCapacity + 1}"
             )
     }
 
@@ -314,8 +351,8 @@ fun RecyclerView.dataFooter(index: Int, data: Any) {
 /**
  * insert a header segment to RecyclerView
  */
-inline fun <T> RecyclerView.headerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
-SegmentDataNullable<T>) {
+inline fun RecyclerView.headerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
+Class<out SegmentDataNullable<*>>) {
     if (adapter == null)
         return
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
@@ -334,26 +371,28 @@ SegmentDataNullable<T>) {
             newPos = headerSize()
 
         //before insert data
-        val newSegments = mutableMapOf<Int, BaseSegment<*, *>>()
+        val newSegments = mutableMapOf<Int, SegmentInfo<out SegmentDataNullable<*>>>()
         var i = 0
         while (i < newPos) {
             val type: Int = viewTypeList[i]
-            newSegments[type] = mSegmentsHeader[type] as BaseSegment<*, *>
+            newSegments[type] = mSegmentsHeader[type] as SegmentInfo<SegmentDataNullable<*>>
             i++
         }
 
         //insert data
-        val segScope = SegmentSets.SegmentScope(null)
-        val newSeg = segScope.func()
+        val segScope = SegmentSets.SegmentScope()
+        val segClass = segScope.func()
+        val segInfo = newSegmentInfoDataNullable(segClass)
         if (!segScope.name.isNullOrEmpty())
-            newSeg.name = segScope.name
-        newSegments[headerTypeIndex--] = newSeg
+            segInfo.name = segScope.name
+        segInfo.args = segScope.args
+        newSegments[headerTypeIndex--] = segInfo
 
         //after insert data
         i = newPos
         while (i < viewTypeList.size) {
             val type = viewTypeList[i]
-            newSegments[type] = mSegmentsHeader[type] as BaseSegment<*, *>
+            newSegments[type] = mSegmentsHeader[type] as SegmentInfo<SegmentDataNullable<*>>
             i++
         }
 
@@ -406,8 +445,8 @@ fun RecyclerView.headerRemove(name: String) {
 /**
  * insert a footer segment to RecyclerView
  */
-inline fun <T> RecyclerView.footerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
-SegmentDataNullable<T>) {
+inline fun RecyclerView.footerAdd(pos: Int, func: SegmentSets.SegmentScope.() ->
+Class<out SegmentDataNullable<*>>) {
     if (adapter == null)
         return
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
@@ -426,26 +465,28 @@ SegmentDataNullable<T>) {
             newPos = footerSize()
 
         //before insert data
-        val newSegments = mutableMapOf<Int, BaseSegment<*, *>>()
+        val newSegments = mutableMapOf<Int, SegmentInfo<out SegmentDataNullable<*>>>()
         var i = 0
         while (i < newPos) {
             val type: Int = viewTypeList[i]
-            newSegments[type] = mSegmentsFooter[type] as BaseSegment<*, *>
+            newSegments[type] = mSegmentsFooter[type] as SegmentInfo<SegmentDataNullable<*>>
             i++
         }
 
         //insert data
-        val segScope = SegmentSets.SegmentScope(null)
-        val newSeg = segScope.func()
+        val segScope = SegmentSets.SegmentScope()
+        val segClass = segScope.func()
+        val segInfo = newSegmentInfoDataNullable(segClass)
         if (!segScope.name.isNullOrEmpty())
-            newSeg.name = segScope.name
-        newSegments[footerTypeIndex--] = newSeg
+            segInfo.name = segScope.name
+        segInfo.args = segScope.args
+        newSegments[footerTypeIndex--] = segInfo
 
         //after insert data
         i = newPos
         while (i < viewTypeList.size) {
             val type = viewTypeList[i]
-            newSegments[type] = mSegmentsFooter[type] as BaseSegment<*, *>
+            newSegments[type] = mSegmentsFooter[type] as SegmentInfo<SegmentDataNullable<*>>
             i++
         }
 
@@ -555,7 +596,7 @@ fun RecyclerView.header(name: String): View? {
         var i = 0
         mSegmentsHeader.values.forEach {
             if (name == it.name)
-                return it.viewInstance
+                return it.view
             i++
         }
     }
@@ -574,7 +615,7 @@ fun RecyclerView.footer(name: String): View? {
         var i = 0
         mSegmentsFooter.values.forEach {
             if (name == it.name)
-                return it.viewInstance
+                return it.view
             i++
         }
     }
@@ -598,7 +639,7 @@ fun RecyclerView.header(index: Int): View? {
     }
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
     val targetViewType = segmentSets.headerIndex2ViewType(index)
-    return segmentSets.mSegmentsHeader[targetViewType]?.viewInstance
+    return segmentSets.mSegmentsHeader[targetViewType]?.view
 }
 
 /**
@@ -618,5 +659,5 @@ fun RecyclerView.footer(index: Int): View? {
     }
     val segmentSets = (adapter as RecyclerViewAdpt<*>).segmentSets
     val targetViewType = segmentSets.footerIndex2ViewType(index)
-    return segmentSets.mSegmentsFooter[targetViewType]?.viewInstance
+    return segmentSets.mSegmentsFooter[targetViewType]?.view
 }

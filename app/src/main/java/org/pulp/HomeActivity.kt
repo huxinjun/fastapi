@@ -4,7 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import org.pulp.kotlin.activity.KtActivity2
+import org.pulp.kotlin.activity.TestAdapterViewActivity
+import org.pulp.kotlin.activity.TestRcvActivity
 import org.pulp.main.MainActivity
 import org.pulp.main.R
 
@@ -23,7 +24,11 @@ class HomeActivity : Activity() {
     }
 
     fun goViewDslPage(view: View) {
-        startActivity(Intent(this, KtActivity2::class.java))
+        startActivity(Intent(this, TestRcvActivity::class.java))
+    }
+
+    fun goViewDslAdapterViewPage(view: View) {
+        startActivity(Intent(this, TestAdapterViewActivity::class.java))
     }
 
 }

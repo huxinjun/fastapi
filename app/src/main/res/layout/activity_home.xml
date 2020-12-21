@@ -27,6 +27,12 @@
                 android:layout_height="wrap_content"
                 android:onClick="goViewDslPage"
                 android:text="viewdsl test" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="goViewDslAdapterViewPage"
+                android:text="viewdsl test for adapter view" />
         </LinearLayout>
     </ScrollView>
 
