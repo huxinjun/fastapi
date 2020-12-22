@@ -50,7 +50,10 @@ class ItemViewAdapter<T>(var set: LvSegmentSets) : BaseAdapter() {
         val realPos = if (segmentInfo.repeatable) position % set.data.size else position
         val itemData = set.data[realPos]
         val bindingContext = BindingContext(set.data.size, realPos, itemData as T)
-        segment.onBind(bindingContext)
+        if (segment is Segment) {
+            segment.bindCtx = bindingContext
+            segment.onBind(bindingContext)
+        }
 
         return view
 

@@ -141,10 +141,20 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
             }
 
             holder.mFinder.init(it, {})
-            if (!dataNullable)
-                it.onBind(BindingContext(segmentSets.data.size, position, itemData as T))
-            else
-                it.onBind(BindingContextDataNullable(position, itemData as T))
+            if (!dataNullable) {
+                val bindingContext = BindingContext(segmentSets.data.size, position, itemData as T)
+                if (it is Segment) {
+                    it.bindCtx = bindingContext
+                    it.onBind(bindingContext)
+                }
+
+            } else {
+                val bindingContextDataNullable = BindingContextDataNullable(position, itemData as T)
+                if (it is SegmentDataNullable) {
+                    it.bindCtx = bindingContextDataNullable
+                    it.onBind(bindingContextDataNullable)
+                }
+            }
         }
     }
 }

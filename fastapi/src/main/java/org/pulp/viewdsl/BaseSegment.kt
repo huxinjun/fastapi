@@ -16,9 +16,20 @@ abstract class BaseSegment<T, B> {
     open fun onCreateView(): Int = 0
     open fun onViewCreated(view: View) {}
     open fun onReceiveArg(args: Array<out Any>) {}
+
+
 }
 
-open class Segment<T> : BaseSegment<T, BindingContext<T>>()
+open class Segment<T> : BaseSegment<T, BindingContext<T>>() {
+
+    internal var bindCtx: BindingContext<T>? = null
+
+    fun getData(block: BindingContext<T>.() -> Unit) {
+        bindCtx?.let {
+            block(it)
+        }
+    }
+}
 
 /**
  * 因为header,footer的view不是根据数据来实例化的
@@ -27,7 +38,16 @@ open class Segment<T> : BaseSegment<T, BindingContext<T>>()
  * Created by xinjun on 2020/7/23 12:20 AM
  */
 open class SegmentDataNullable<T> : BaseSegment<T, BindingContextDataNullable<T>>() {
+
+    internal var bindCtx: BindingContextDataNullable<T>? = null
+
     open fun onCreateViewInstance(): View? = null
+
+    fun getData(block: BindingContextDataNullable<T>.() -> Unit) {
+        bindCtx?.let {
+            block(it)
+        }
+    }
 }
 
 

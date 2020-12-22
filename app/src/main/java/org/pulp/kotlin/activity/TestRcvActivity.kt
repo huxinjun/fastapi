@@ -338,6 +338,7 @@ class SegItem2 : Segment<IT>() {
 
 class SegItem3 : Segment<IT>() {
     @Bind(R.id.tv_txt)
+    @OnClick("onTextClick")
     lateinit var tv_txt: TextView
 
     override fun onCreateView() = R.layout.layout3
@@ -348,6 +349,12 @@ class SegItem3 : Segment<IT>() {
         "SegItem3:${this}".log()
         tv_txt.text = bindCtx.data.name + bindCtx.data.value
     }
+
+    fun onTextClick() {
+        getData {
+            "SegItem3:${data.name}".log()
+        }
+    }
 }
 
 
@@ -357,7 +364,7 @@ class MyFinder2(v: View, private val testRcvActivity: TestRcvActivity) : Finder(
     @BindRoot
     lateinit var root: View
 
-    @OnClick("onBtn1Click",1000)
+    @OnClick("onBtn1Click", 1000)
     lateinit var btn_1: Button
 
     @OnClick

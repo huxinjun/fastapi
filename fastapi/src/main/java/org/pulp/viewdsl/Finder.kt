@@ -132,9 +132,10 @@ inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
                     } catch (e: NoSuchMethodException) {
                     }
                     try {
-                        if (method == null)
+                        if (method == null) {
                             method = declare::class.java.getDeclaredMethod(methodName)
-                        hasArg = false
+                            hasArg = false
+                        }
                     } catch (e: NoSuchMethodException) {
                         throwOnClickMethodNotFindError(declare, this, methodName, findView)
                     }
