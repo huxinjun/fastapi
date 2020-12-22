@@ -5,14 +5,12 @@ package org.pulp.kotlin.activity
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.view.View
-import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import org.pulp.main.R
 import org.pulp.viewdsl.*
+import org.pulp.viewdsl.anno.Bind
 
 class TestAdapterViewActivity : AppCompatActivity() {
 

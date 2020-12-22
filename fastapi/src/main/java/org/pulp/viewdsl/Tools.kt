@@ -12,15 +12,6 @@ inline fun <T : View> T?.safe(function: T.() -> Unit) {
 
 fun Int.abs(): Int = Math.abs(this)
 
-fun Int.R(rClass: Any): String {
-    rClass::class.java.declaredFields.forEach {
-        (it::setAccessible)(true)
-        val rId = it.getInt(null)
-        if (this == rId)
-            return "R.id." + it.name
-    }
-    return toString()
-}
 
 fun log(text: String) {
     Log.i("viewdsl", text)

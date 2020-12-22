@@ -13,9 +13,10 @@ import android.widget.Button
 import android.widget.TextView
 import org.pulp.main.R
 import org.pulp.viewdsl.*
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import org.pulp.viewdsl.anno.Bind
+import org.pulp.viewdsl.anno.BindAuto
+import org.pulp.viewdsl.anno.BindRoot
+import org.pulp.viewdsl.anno.OnClick
 
 class TestRcvActivity : AppCompatActivity() {
 
@@ -32,7 +33,7 @@ class TestRcvActivity : AppCompatActivity() {
 
 
 
-        mf = finder(MyFinder2(inflate)) {
+        mf = finder(MyFinder2(inflate, this)) {
 
             ("finder.rcv=$rcv").log()
             rcv.safe {
@@ -300,13 +301,20 @@ class SegFooter : SegmentDataNullable<IT>() {
     }
 }
 
-
+@BindAuto
 class SegItem1 : Segment<IT0>() {
 
-    @Bind(R.id.tv_txt)
     lateinit var tv_txt: TextView
 
     override fun onCreateView() = R.layout.layout1
+
+    override fun onReceiveArg(args: Array<out Any>) {
+        super.onReceiveArg(args)
+    }
+
+    override fun onViewCreated(view: View) {
+        super.onViewCreated(view)
+    }
 
     @SuppressLint("SetTextI18n")
     override fun onBind(bindCtx: BindingContext<IT0>) {
@@ -343,37 +351,50 @@ class SegItem3 : Segment<IT>() {
 }
 
 
-class MyFinder2(v: View) : Finder(v) {
-    @Bind(R.id.btn_1)
-    var btn: Button? = null
+@BindAuto
+class MyFinder2(v: View, private val testRcvActivity: TestRcvActivity) : Finder(v), View.OnClickListener {
 
-    @Bind(R.id.btn_2)
-    var btn2: Button? = null
+    @BindRoot
+    lateinit var root: View
 
-    @Bind(R.id.btn_3)
-    var btn3: Button? = null
+    @OnClick("onBtn1Click",1000)
+    lateinit var btn_1: Button
 
-    @Bind(R.id.btn_4)
-    var btn4: Button? = null
+    @OnClick
+    var btn_2: Button? = null
 
-    @Bind(R.id.btn_5)
-    var btn5: Button? = null
+    @OnClick
+    var btn_3: Button? = null
 
-    @Bind(R.id.btn_6)
-    var btn6: Button? = null
+    @OnClick
+    var btn_4: Button? = null
 
-    @Bind(R.id.btn_7)
-    var btn7: Button? = null
+    @OnClick
+    var btn_5: Button? = null
 
-    @Bind(R.id.btn_8)
-    var btn8: Button? = null
+    @OnClick
+    var btn_6: Button? = null
 
-    @Bind(R.id.btn_9)
-    var btn9: Button? = null
+    @OnClick
+    var btn_7: Button? = null
 
+    @OnClick
+    var btn_8: Button? = null
 
-    @Bind(R.id.rcv)
+    @OnClick
+    var btn_9: Button? = null
+
     var rcv: RecyclerView? = null
+
+    override fun onClick(v: View?) {
+        v?.context?.let {
+            testRcvActivity.onBtnClick(v)
+        }
+    }
+
+    fun onBtn1Click() {
+        testRcvActivity.onBtnClick(btn_1)
+    }
 
 }
 
