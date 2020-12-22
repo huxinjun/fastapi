@@ -1,12 +1,12 @@
 ### 版本说明:
 
-__1.8.6__
-	Segment支持getData方法,可以获取到关联的数据等信息
-__1.8.5__
-	Segment自动注入view,新增@BindAuto,@BindRoot,@OnClick注解
-__1.8.4__
-	解决了模板复用导致的view引用问题
-	现在segment只支持生命周期方式,旧版的set callback被删除
+* __1.8.6__
+  Segment支持getData方法,可以获取到关联的数据等信息
+* __1.8.5__
+    Segment自动注入view,新增@BindAuto,@BindRoot,@OnClick注解
+* __1.8.4__
+    解决了模板复用导致的view引用问题
+    现在segment只支持生命周期方式,旧版的set callback被删除
 
 
 
