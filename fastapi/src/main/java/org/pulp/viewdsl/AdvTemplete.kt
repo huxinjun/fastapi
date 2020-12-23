@@ -36,6 +36,7 @@ class ItemViewAdapter<T>(var set: LvSegmentSets) : BaseAdapter() {
 
             view = LayoutInflater.from(set.ctx).inflate(segment.onCreateView(),
                     parent, false)
+            segment.onViewCreated(view)
             holder = VH(view!!)
             holder.itemBaseSegment = segment as BaseSegment<T, Any>
             view.tag = holder

@@ -77,6 +77,7 @@ fun argInject(segmentInfo: SegmentInfo<*>,
     segmentInfo.args?.let { args ->
         segment::class.java.declaredFields.forEach { field ->
             field?.run {
+                isAccessible = true
                 val argIndexAnno = getAnnotation(Argument::class.java)
                 argIndexAnno?.let {
                     val argIndex = it.value

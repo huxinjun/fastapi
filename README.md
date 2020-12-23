@@ -1,5 +1,8 @@
 ### 版本说明:
 
+* __1.9.1__
+  Adapter Segment onViewCreated未调用,@Argument bug
+
 * __1.9.0__
   Adapter Segment 的ctx未初始化问题
 

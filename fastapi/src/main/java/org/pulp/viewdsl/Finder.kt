@@ -65,6 +65,10 @@ inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
         field?.run {
             isAccessible = true
 
+            val argumentAnno = getAnnotation(Argument::class.java)
+            if (argumentAnno != null)
+                return@forEach
+
             val findView: View
             var throwError = true
             val bindAnno = getAnnotation(Bind::class.java)

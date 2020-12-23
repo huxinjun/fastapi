@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import org.pulp.main.R
@@ -41,7 +42,7 @@ class TestAdapterViewActivity : AppCompatActivity() {
                     item {
                         SegItem::class.java
                                 .withName("SegItem")
-                                .withArgs("胡新军")
+                                .withArgs(LinearLayout(context))
                                 .repeatable(true)
                     }
                 }
@@ -57,7 +58,7 @@ class TestAdapterViewActivity : AppCompatActivity() {
 class SegItem : Segment<IT0>() {
 
     @Argument
-    lateinit var xxxxxx: String
+    lateinit var xxxxxx: View
 
     @Bind(R.id.tv_txt)
     lateinit var tv_txt: TextView

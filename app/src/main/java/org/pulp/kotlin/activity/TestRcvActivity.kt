@@ -10,7 +10,9 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.Button
+import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import org.pulp.main.R
 import org.pulp.viewdsl.*
 import org.pulp.viewdsl.anno.*
@@ -58,7 +60,7 @@ class TestRcvActivity : AppCompatActivity() {
                         SegHeader1::class.java.withName("header1").withArgs(ctx)
                     }
                     header {
-                        SegHeader2::class.java
+                        SegHeader2::class.java.withArgs(RelativeLayout(context))
                     }
 
                     footer {
@@ -69,7 +71,9 @@ class TestRcvActivity : AppCompatActivity() {
                     }
 
                     item(11) {
-                        SegItem1::class.java.withArgs("hello", "xinjun")
+                        SegItem1::class.java.withArgs({
+                            "SegItem1 on click".log()
+                        })
                     }
 
                     item(21) {
@@ -265,6 +269,7 @@ class SegHeader2 : SegmentDataNullable<IT>() {
 
     override fun onCreateView() = R.layout.layout1
 
+
     @SuppressLint("SetTextI18n")
     override fun onBind(bindCtx: BindingContextDataNullable<IT>) {
         super.onBind(bindCtx)
@@ -294,9 +299,10 @@ class SegFooter : SegmentDataNullable<IT>() {
 @BindAuto
 class SegItem1 : Segment<IT0>() {
 
-    @Argument(1)
-    lateinit var arg: Segment<*>
+    @Argument
+    private var arg: (() -> Unit)? = null
 
+    @OnClick("click")
     lateinit var tv_txt: TextView
 
     override fun onCreateView() = R.layout.layout1
@@ -309,6 +315,10 @@ class SegItem1 : Segment<IT0>() {
     override fun onBind(bindCtx: BindingContext<IT0>) {
         super.onBind(bindCtx)
         tv_txt.text = bindCtx.data.text + bindCtx.data.data + ",arg=${arg}"
+    }
+
+    fun click() {
+        arg?.let { it() }
     }
 }
 
