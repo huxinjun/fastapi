@@ -1,5 +1,8 @@
 ### 版本说明:
-
+* __1.8.8__
+  新增@ArgIndex注解,删除Segment的onReceiveArgs方法
+* __1.8.7__
+  Segment内置Context,新增@OnLongClick注解
 * __1.8.6__
   Segment支持getData方法,可以获取到关联的数据等信息
 * __1.8.5__
@@ -411,10 +414,6 @@ class SegItem : Segment<IT>() {
 
 ##### 5. Segment生命周期
 
-1. __onReceiveArg(args: Array<out Any>)__
-
-   在调用templete的item方法配置item所关联的segment class时,可以使用在class上使用withName或者withArgs方法,当segment实例被创建时会首先调用onReceiveArg并传入withArgs携带的参数,参数支持任意类型任意数量,需要在onReceiveArg对参数进行类型转换,并严格对应顺数
-
 2. __onCreateView()__
 
    返回一个layout的id表明该segment使用的布局
@@ -432,16 +431,20 @@ class SegItem : Segment<IT>() {
 
 ##### 6. Segment支持的注解
 
-| 注解      | 作用                 | 可配置位置  |
-| --------- | -------------------- | ----------- |
-| @Bind     | 绑定View,需要view id | Segment字段 |
-| @BindAuto | 自动搜索并绑定       | Segment类   |
-| @BindRoot | 绑定根布局           | Segment字段 |
-| @OnClick  | 绑定点击事件         | Segment字段 |
+| 注解         | 作用                 | 可配置位置  |
+| ------------ | -------------------- | ----------- |
+| @Bind        | 绑定View,需要view id | Segment字段 |
+| @BindAuto    | 自动搜索并绑定       | Segment类   |
+| @BindRoot    | 绑定根布局           | Segment字段 |
+| @OnClick     | 绑定点击事件         | Segment字段 |
+| @OnLongClick | 绑定长按事件         | Segment字段 |
+| @ArgIndex    | 接收参数             | Segment字段 |
 
 __注入view注解优先级:__
 
 > __@Bind__>__@BindRoot__>__@BindAuto__
+
+
 
 __@OnClick说明:__
 
@@ -453,5 +456,7 @@ __@OnClick说明:__
 
 
 
+__@ArgIndex说明__
 
+在调用templete的item方法配置item所关联的segment class时,可以使用在class上使用withName或者withArgs方法,当segment实例被创建时会根据@ArgIndex自动注入,参数支持任意类型任意数量,需要在Segment的字段上使用@ArgIndex声明参数的序号
 

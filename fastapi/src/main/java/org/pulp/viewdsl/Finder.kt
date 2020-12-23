@@ -8,10 +8,7 @@ import android.view.View
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.android.MainThreadDisposable
-import org.pulp.viewdsl.anno.Bind
-import org.pulp.viewdsl.anno.BindAuto
-import org.pulp.viewdsl.anno.BindRoot
-import org.pulp.viewdsl.anno.OnClick
+import org.pulp.viewdsl.anno.*
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.util.concurrent.TimeUnit
@@ -103,61 +100,126 @@ inline fun <T : Finder, D : Any> T.init(declare: D, function: D.() -> Unit): T {
                     throwTypeError(declare, this, findView)
             }
             //支持onclick----------------------------------------------------------------
-            val onClickAnno = getAnnotation(OnClick::class.java)
-            onClickAnno?.let {
-                val methodName = it.value
-                if (methodName.isEmpty()) {
-                    if (declare is View.OnClickListener) {
-                        findView.clickInterval(onClickAnno.interval) {
-                            declare.onClick(findView)
-                        }
-                    } else
-                        throwOnClickImplementError(declare, this)
-                } else {
-                    var method: Method? = null
-                    var hasArg = true
-                    try {
-                        method = declare::class.java.getDeclaredMethod(methodName,
-                                findView::class.java)
-                    } catch (e: NoSuchMethodException) {
-                    }
-                    try {
-                        if (method == null)
-                            method = declare::class.java.getDeclaredMethod(methodName, field.type)
-                    } catch (e: NoSuchMethodException) {
-                    }
-                    try {
-                        if (method == null)
-                            method = declare::class.java.getDeclaredMethod(methodName, View::class.java)
-                    } catch (e: NoSuchMethodException) {
-                    }
-                    try {
-                        if (method == null) {
-                            method = declare::class.java.getDeclaredMethod(methodName)
-                            hasArg = false
-                        }
-                    } catch (e: NoSuchMethodException) {
-                        throwOnClickMethodNotFindError(declare, this, methodName, findView)
-                    }
-
-                    findView.clickInterval(onClickAnno.interval) {
-                        method?.isAccessible = true
-                        if (hasArg)
-                            method?.invoke(declare, findView)
-                        else
-                            method?.invoke(declare)
-                    }
-
-
-                }
-                Unit
-            }
+            onClickAnnoSupport(declare, field, findView)
+            //支持onLongClick----------------------------------------------------------------
+            onLongClickAnnoSupport(declare, field, findView)
 
         }
     }
     declare.function()
     return this
 }
+
+fun Finder.onClickAnnoSupport(declare: Any,
+                              field: Field,
+                              findView: View) {
+    val onClickAnno = field.getAnnotation(OnClick::class.java)
+    onClickAnno?.let {
+        val methodName = it.value
+        if (methodName.isEmpty()) {
+            if (declare is View.OnClickListener) {
+                findView.clickInterval(it.interval) {
+                    declare.onClick(findView)
+                }
+            } else
+                throwOnClickImplementError(declare, field)
+        } else {
+            var method: Method? = null
+            var hasArg = true
+            try {
+                method = declare::class.java.getDeclaredMethod(methodName,
+                        findView::class.java)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null)
+                    method = declare::class.java.getDeclaredMethod(methodName, field.type)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null)
+                    method = declare::class.java.getDeclaredMethod(methodName, View::class.java)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null) {
+                    method = declare::class.java.getDeclaredMethod(methodName)
+                    hasArg = false
+                }
+            } catch (e: NoSuchMethodException) {
+                throwOnClickMethodNotFindError(declare, field, methodName, findView)
+            }
+
+            findView.clickInterval(onClickAnno.interval) {
+                method?.isAccessible = true
+                if (hasArg)
+                    method?.invoke(declare, findView)
+                else
+                    method?.invoke(declare)
+            }
+
+
+        }
+        Unit
+    }
+}
+
+
+fun Finder.onLongClickAnnoSupport(declare: Any,
+                                  field: Field,
+                                  findView: View) {
+    val onLongClickAnno = field.getAnnotation(OnLongClick::class.java)
+    onLongClickAnno?.let { onLongClick ->
+        val methodName = onLongClick.value
+        if (methodName.isEmpty()) {
+            if (declare is View.OnLongClickListener) {
+                findView.setOnLongClickListener {
+                    declare.onLongClick(it)
+                }
+            } else
+                throwOnLongClickImplementError(declare, field)
+        } else {
+            var method: Method? = null
+            var hasArg = true
+            try {
+                method = declare::class.java.getDeclaredMethod(methodName,
+                        findView::class.java)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null)
+                    method = declare::class.java.getDeclaredMethod(methodName, field.type)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null)
+                    method = declare::class.java.getDeclaredMethod(methodName, View::class.java)
+            } catch (e: NoSuchMethodException) {
+            }
+            try {
+                if (method == null) {
+                    method = declare::class.java.getDeclaredMethod(methodName)
+                    hasArg = false
+                }
+            } catch (e: NoSuchMethodException) {
+                throwOnClickMethodNotFindError(declare, field, methodName, findView)
+            }
+
+            findView.setOnLongClickListener {
+                method?.isAccessible = true
+                val ret =
+                        if (hasArg)
+                            method?.invoke(declare, findView)
+                        else
+                            method?.invoke(declare)
+
+                if (ret is Boolean) ret else true
+            }
+        }
+        Unit
+    }
+}
+
 
 @SuppressLint("CheckResult")
 fun View.clickInterval(milliSecond: Long, listener: () -> Unit) {
@@ -211,6 +273,14 @@ fun Finder.throwOnClickImplementError(declareObj: Any,
     throw RuntimeException("when your field[${field.name}] OnClick annotation not set value to " +
             "appoint a method,your class[${declareObj::class.qualifiedName}] " +
             "must implements View.OnClickListener")
+}
+
+fun Finder.throwOnLongClickImplementError(declareObj: Any,
+                                          field: Field
+) {
+    throw RuntimeException("when your field[${field.name}] OnLongClick annotation not set value " +
+            "to appoint a method,your class[${declareObj::class.qualifiedName}] " +
+            "must implements View.OnLongClickListener")
 }
 
 fun Finder.throwOnClickMethodNotFindError(declareObj: Any,

@@ -4,6 +4,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import org.pulp.viewdsl.anno.ArgIndex
 import java.lang.Exception
 import java.lang.RuntimeException
 
@@ -72,9 +73,9 @@ class RecyclerViewAdpt<T>(var segmentSets: SegmentSets) : RecyclerView.Adapter<V
                     "class" +
                     ":${segmentInfo.clazz.name}")
         }
-        segmentInfo.args?.let {
-            segment.onReceiveArg(it)
-        }
+        segment.ctx = parent.context
+
+        argInject(segmentInfo, segment)
 
 
         var view: View? = null

@@ -13,10 +13,7 @@ import android.widget.Button
 import android.widget.TextView
 import org.pulp.main.R
 import org.pulp.viewdsl.*
-import org.pulp.viewdsl.anno.Bind
-import org.pulp.viewdsl.anno.BindAuto
-import org.pulp.viewdsl.anno.BindRoot
-import org.pulp.viewdsl.anno.OnClick
+import org.pulp.viewdsl.anno.*
 
 class TestRcvActivity : AppCompatActivity() {
 
@@ -72,7 +69,7 @@ class TestRcvActivity : AppCompatActivity() {
                     }
 
                     item(11) {
-                        SegItem1::class.java
+                        SegItem1::class.java.withArgs("hello", "xinjun")
                     }
 
                     item(21) {
@@ -199,7 +196,6 @@ class TestRcvActivity : AppCompatActivity() {
 
 class SegHeader1 : SegmentDataNullable<IT>() {
 
-    var ctx: Context? = null
 
     @Bind(R.id.tv_txt)
     lateinit var tv_txt: TextView
@@ -237,12 +233,6 @@ class SegHeader1 : SegmentDataNullable<IT>() {
             rcv_inner.let { }
         }
 
-    }
-
-    override fun onReceiveArg(args: Array<out Any>) {
-        super.onReceiveArg(args)
-        if (args.isNotEmpty())
-            ctx = castCtx(args[0])
     }
 }
 
@@ -304,13 +294,12 @@ class SegFooter : SegmentDataNullable<IT>() {
 @BindAuto
 class SegItem1 : Segment<IT0>() {
 
+    @ArgIndex(1)
+    lateinit var arg: Segment<*>
+
     lateinit var tv_txt: TextView
 
     override fun onCreateView() = R.layout.layout1
-
-    override fun onReceiveArg(args: Array<out Any>) {
-        super.onReceiveArg(args)
-    }
 
     override fun onViewCreated(view: View) {
         super.onViewCreated(view)
@@ -319,7 +308,7 @@ class SegItem1 : Segment<IT0>() {
     @SuppressLint("SetTextI18n")
     override fun onBind(bindCtx: BindingContext<IT0>) {
         super.onBind(bindCtx)
-        tv_txt.text = bindCtx.data.text + bindCtx.data.data
+        tv_txt.text = bindCtx.data.text + bindCtx.data.data + ",arg=${arg}"
     }
 }
 
@@ -339,6 +328,7 @@ class SegItem2 : Segment<IT>() {
 class SegItem3 : Segment<IT>() {
     @Bind(R.id.tv_txt)
     @OnClick("onTextClick")
+    @OnLongClick("onTextLongClick")
     lateinit var tv_txt: TextView
 
     override fun onCreateView() = R.layout.layout3
@@ -352,7 +342,13 @@ class SegItem3 : Segment<IT>() {
 
     fun onTextClick() {
         getData {
-            "SegItem3:${data.name}".log()
+            "SegItem3.onTextClick:${data.value}".log()
+        }
+    }
+
+    fun onTextLongClick() {
+        getData {
+            "SegItem3.onTextLongClick:${data.value}".log()
         }
     }
 }

@@ -19,6 +19,8 @@ class LvSegmentSets(var ctx: Context) {
         val segmentClass = scope.func()
         val segmentInfo = newSegmentInfo(segmentClass)
         segmentInfo.repeatable = scope.repeatable
+        segmentInfo.args = scope.args
+        segmentInfo.name = scope.name
         mSegmentInfo = segmentInfo
     }
 
@@ -37,7 +39,6 @@ class SegmentScope : SegmentSets.SegmentScope() {
         return this
     }
 }
-
 
 
 inline fun AdapterView<*>.templete(crossinline init: LvSegmentSets.() -> Unit) {
