@@ -31,6 +31,7 @@ class ItemViewAdapter<T>(var set: LvSegmentSets) : BaseAdapter() {
                         "class" +
                         ":${segmentInfo.clazz.name}")
             }
+            segment.ctx = set.ctx
             argInject(segmentInfo, segment)
 
             view = LayoutInflater.from(set.ctx).inflate(segment.onCreateView(),

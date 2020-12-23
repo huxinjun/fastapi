@@ -10,7 +10,7 @@ import android.widget.ListView
 import android.widget.TextView
 import org.pulp.main.R
 import org.pulp.viewdsl.*
-import org.pulp.viewdsl.anno.ArgIndex
+import org.pulp.viewdsl.anno.Argument
 import org.pulp.viewdsl.anno.Bind
 
 class TestAdapterViewActivity : AppCompatActivity() {
@@ -37,11 +37,11 @@ class TestAdapterViewActivity : AppCompatActivity() {
             }
 
             lv.safe {
-                templete {
+                template {
                     item {
                         SegItem::class.java
                                 .withName("SegItem")
-                                .withArgs(ctx, "胡新军")
+                                .withArgs("胡新军")
                                 .repeatable(true)
                     }
                 }
@@ -56,7 +56,7 @@ class TestAdapterViewActivity : AppCompatActivity() {
 
 class SegItem : Segment<IT0>() {
 
-    @ArgIndex(1)
+    @Argument
     lateinit var xxxxxx: String
 
     @Bind(R.id.tv_txt)
@@ -67,6 +67,7 @@ class SegItem : Segment<IT0>() {
     @SuppressLint("SetTextI18n")
     override fun onBind(bindCtx: BindingContext<IT0>) {
         super.onBind(bindCtx)
+        val cacheDir = ctx.cacheDir
         tv_txt.text = bindCtx.data.text + bindCtx.data.data + ",arg is $xxxxxx"
     }
 }

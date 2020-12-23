@@ -4,7 +4,6 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import org.pulp.viewdsl.anno.ArgIndex
 import java.lang.Exception
 import java.lang.RuntimeException
 

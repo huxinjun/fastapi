@@ -1,6 +1,13 @@
 ### 版本说明:
+
+* __1.9.0__
+  Adapter Segment 的ctx未初始化问题
+
+* __1.8.9__
+  template 单词错误
+
 * __1.8.8__
-  新增@ArgIndex注解,删除Segment的onReceiveArgs方法
+  新增@Argument注解,删除Segment的onReceiveArgs方法
 * __1.8.7__
   Segment内置Context,新增@OnLongClick注解
 * __1.8.6__
@@ -213,7 +220,7 @@ fun getStaticUrl(@Query("tag") tag: String): URL
 ```kotlin
 rcv_contact?.run {
   
-            templete {
+            template {
 
                 type {
                     when (this.data) {
@@ -270,9 +277,9 @@ rcv_contact?.run {
 
 ###### 2.1 设置适配器
 
-​	templete{}
+​	template{}
 
-​	templete上下文支持的方法有:
+​	template上下文支持的方法有:
 
 ​		__item__:定义item
 
@@ -414,15 +421,15 @@ class SegItem : Segment<IT>() {
 
 ##### 5. Segment生命周期
 
-2. __onCreateView()__
+1. __onCreateView()__
 
    返回一个layout的id表明该segment使用的布局
 
-3. __onViewCreated(view: View)__
+2. __onViewCreated(view: View)__
 
    布局被创建后
 
-4. __onBind(bindCtx: BindingContext<Data>)__
+3. __onBind(bindCtx: BindingContext<Data>)__
 
    布局数据需要更新时
 
@@ -438,7 +445,7 @@ class SegItem : Segment<IT>() {
 | @BindRoot    | 绑定根布局           | Segment字段 |
 | @OnClick     | 绑定点击事件         | Segment字段 |
 | @OnLongClick | 绑定长按事件         | Segment字段 |
-| @ArgIndex    | 接收参数             | Segment字段 |
+| @Argument    | 接收参数             | Segment字段 |
 
 __注入view注解优先级:__
 
@@ -458,5 +465,10 @@ __@OnClick说明:__
 
 __@ArgIndex说明__
 
-在调用templete的item方法配置item所关联的segment class时,可以使用在class上使用withName或者withArgs方法,当segment实例被创建时会根据@ArgIndex自动注入,参数支持任意类型任意数量,需要在Segment的字段上使用@ArgIndex声明参数的序号
+> 参数:
+>
+> __value__ 		参数顺序,不写时为0
+
+在调用template的item方法配置item所关联的segment class时,可以使用在class上使用withName或者withArgs方法,当segment
+实例被创建时会根据@ArgIndex自动注入,参数支持任意类型任意数量,需要在Segment的字段上使用@ArgIndex声明参数的序号
 

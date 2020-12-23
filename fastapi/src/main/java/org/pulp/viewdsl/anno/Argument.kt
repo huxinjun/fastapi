@@ -2,4 +2,4 @@ package org.pulp.viewdsl.anno
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ArgIndex(val value: Int)
+annotation class Argument(val value: Int = 0)//index

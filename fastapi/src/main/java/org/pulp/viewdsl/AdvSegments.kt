@@ -41,7 +41,7 @@ class SegmentScope : SegmentSets.SegmentScope() {
 }
 
 
-inline fun AdapterView<*>.templete(crossinline init: LvSegmentSets.() -> Unit) {
+inline fun AdapterView<*>.template(crossinline init: LvSegmentSets.() -> Unit) {
     this.adapter = ItemViewAdapter<Any> {
         val set = LvSegmentSets(context)
         set.init()

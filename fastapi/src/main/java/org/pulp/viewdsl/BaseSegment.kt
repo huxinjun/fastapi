@@ -2,7 +2,7 @@ package org.pulp.viewdsl
 
 import android.content.Context
 import android.view.View
-import org.pulp.viewdsl.anno.ArgIndex
+import org.pulp.viewdsl.anno.Argument
 import java.lang.Exception
 import java.lang.RuntimeException
 
@@ -77,7 +77,7 @@ fun argInject(segmentInfo: SegmentInfo<*>,
     segmentInfo.args?.let { args ->
         segment::class.java.declaredFields.forEach { field ->
             field?.run {
-                val argIndexAnno = getAnnotation(ArgIndex::class.java)
+                val argIndexAnno = getAnnotation(Argument::class.java)
                 argIndexAnno?.let {
                     val argIndex = it.value
                     if (argIndex >= args.size)

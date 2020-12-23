@@ -171,7 +171,7 @@ class SegmentSets(var ctx: Context) {
 //**************************************
 
 @Suppress("UNCHECKED_CAST")
-inline fun RecyclerView.templete(crossinline init: SegmentSets.() -> Unit) {
+inline fun RecyclerView.template(crossinline init: SegmentSets.() -> Unit) {
     this.adapter = RecyclerViewAdpt<Any> {
         val set = SegmentSets(context)
         set.init()

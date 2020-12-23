@@ -41,10 +41,10 @@ class TestRcvActivity : AppCompatActivity() {
             rcv.safe {
                 layoutManager = LinearLayoutManager(context)
 
-                dataHeader(0, IT("测试header填充数据", "before templete"))
-                dataFooter(0, IT("测试footer填充数据", "before templete"))
+                dataHeader(0, IT("测试header填充数据", "before template"))
+                dataFooter(0, IT("测试footer填充数据", "before template"))
 
-                templete {
+                template {
 
                     type {
                         when (pos) {
@@ -83,8 +83,8 @@ class TestRcvActivity : AppCompatActivity() {
 
                 }
 
-                dataHeader(1, IT("测试header填充数据", "after templete"))
-                dataFooter(1, IT("测试footer填充数据", "after templete"))
+                dataHeader(1, IT("测试header填充数据", "after template"))
+                dataFooter(1, IT("测试footer填充数据", "after template"))
             }
         }
 
@@ -215,7 +215,7 @@ class SegHeader1 : SegmentDataNullable<IT>() {
         bindCtx.run {
             tv_txt.text = "${data?.name}:${data?.value}"
             rcv_inner.safe {
-                templete {
+                template {
                     layoutManager = LinearLayoutManager(
                             ctx,
                             RecyclerView.HORIZONTAL,
@@ -294,7 +294,7 @@ class SegFooter : SegmentDataNullable<IT>() {
 @BindAuto
 class SegItem1 : Segment<IT0>() {
 
-    @ArgIndex(1)
+    @Argument(1)
     lateinit var arg: Segment<*>
 
     lateinit var tv_txt: TextView
